@@ -1,0 +1,55 @@
+{
+  "name": "jupyter-link",
+  "version": "0.1.0",
+  "description": "CLI and AgentSkill to execute code in Jupyter kernels and persist outputs to notebooks",
+  "type": "module",
+  "license": "MIT",
+  "author": "Roberto Arce",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/robertoarce/jupyter-link.git"
+  },
+  "homepage": "https://github.com/robertoarce/jupyter-link",
+  "keywords": [
+    "jupyter",
+    "notebook",
+    "kernel",
+    "agentskills",
+    "cli",
+    "execute",
+    "ipynb",
+    "nbformat"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "bin",
+    "src",
+    "scripts",
+    "oclif.manifest.json"
+  ],
+  "dependencies": {
+    "@oclif/core": "^3.26.3"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^1.6.1",
+    "vitest": "^1.5.0",
+    "yaml": "^2.4.1"
+  },
+  "scripts": {
+    "build": "npx oclif manifest",
+    "test": "vitest run --reporter=dot",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prepublishOnly": "npm run build"
+  },
+  "bin": {
+    "jupyter-link": "bin/run"
+  },
+  "oclif": {
+    "bin": "jupyter-link",
+    "commands": "./src/commands",
+    "plugins": []
+  }
+}

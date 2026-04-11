@@ -1,0 +1,27 @@
+{
+  "name": "jupyter-link",
+  "version": "0.1.0",
+  "description": "Execute code in Jupyter kernels and persist outputs to notebooks",
+  "using": "scripts",
+  "environment": {
+    "JUPYTER_URL": {"description": "Base URL, e.g. http://127.0.0.1:8888", "required": false},
+    "JUPYTER_TOKEN": {"description": "Server token if required", "required": false}
+  },
+  "tools": {
+    "config_set": { "description": "Save Jupyter connection settings (url, token, port) to persistent config file", "command": "npx jupyter-link@0.1.0 config:set", "stdin": "json", "stdout": "json" },
+    "config_get": { "description": "Show effective configuration with source (env/file/default) for each field", "command": "npx jupyter-link@0.1.0 config:get", "stdin": "json", "stdout": "json" },
+    "check_env": { "description": "Verify connectivity and basic Jupyter Server compatibility", "command": "npx jupyter-link@0.1.0 check:env", "stdin": "json", "stdout": "json" },
+    "list_sessions": { "description": "List sessions and optionally filter by path or name", "command": "npx jupyter-link@0.1.0 list:sessions", "stdin": "json", "stdout": "json" },
+    "read_notebook": { "description": "Read a notebook JSON via Contents API", "command": "npx jupyter-link@0.1.0 contents:read", "stdin": "json", "stdout": "json" },
+    "write_notebook": { "description": "Write notebook JSON via Contents API", "command": "npx jupyter-link@0.1.0 contents:write", "stdin": "json", "stdout": "json" },
+    "read_cell": { "description": "Read specific cells with source, outputs, and metadata. Supports single cell, list, range, or full summary", "command": "npx jupyter-link@0.1.0 cell:read", "stdin": "json", "stdout": "json" },
+    "insert_cell": { "description": "Insert a code cell with agent metadata", "command": "npx jupyter-link@0.1.0 cell:insert", "stdin": "json", "stdout": "json" },
+    "update_cell": { "description": "Update a code cell (source/outputs/execution_count/metadata)", "command": "npx jupyter-link@0.1.0 cell:update", "stdin": "json", "stdout": "json" },
+    "open_kernel_channels": { "description": "Open persistent kernel WS channels and return a channel_ref", "command": "npx jupyter-link@0.1.0 open:kernel-channels", "stdin": "json", "stdout": "json" },
+    "execute_code": { "description": "Send execute_request on an open channel and return parent_msg_id", "command": "npx jupyter-link@0.1.0 execute:code", "stdin": "json", "stdout": "json" },
+    "collect_outputs": { "description": "Wait for outputs/reply/idle for a parent_msg_id on a channel", "command": "npx jupyter-link@0.1.0 collect:outputs", "stdin": "json", "stdout": "json" },
+    "close_channels": { "description": "Close a previously opened channel_ref", "command": "npx jupyter-link@0.1.0 close:channels", "stdin": "json", "stdout": "json" },
+    "save_notebook": { "description": "Save notebook (round-trip PUT)", "command": "npx jupyter-link@0.1.0 save:notebook", "stdin": "json", "stdout": "json" },
+    "test_api": { "description": "Validate Jupyter Server REST API compatibility using the official OpenAPI schema", "command": "node scripts/test_api.mjs", "stdin": "json", "stdout": "json" }
+  }
+}

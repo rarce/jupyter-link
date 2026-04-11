@@ -1,0 +1,20 @@
+#!/usr/bin/env node
+import { run } from '@oclif/core';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+run(process.argv.slice(2), { root: resolve(__dirname, '..') }).then(() => {
+  // ok
+}).catch((err) => {
+  // Print minimal error and exit non-zero
+  const msg = (err && err.message) || String(err);
+  process.stderr.write(msg + '\n');
+  try {
+    // emit JSON error for AgentSkills
+    process.stdout.write(JSON.stringify({ error: msg, stack: err && err.stack }) + '\n');
+  } catch {}
+  process.exit(1);
+});
+
