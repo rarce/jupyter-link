@@ -1,38 +1,28 @@
 # jupyter-link
 
-CLI and AgentSkill to execute code in running Jupyter kernels and persist outputs back to `.ipynb` notebooks.
+An [AgentSkill](https://agentskills.io) that lets AI agents execute code in running Jupyter kernels and persist outputs back to `.ipynb` notebooks.
 
-## Features
+## Install as a Skill
 
-- Discover running sessions and match by notebook path or name
-- Read/write notebooks via Jupyter Contents API (nbformat v4)
-- Insert or update code cells with agent metadata (`metadata.agent`)
-- Open persistent kernel WebSocket channels for execution
-- Send `execute_request` and collect iopub/shell outputs
-- Map outputs to nbformat v4 format (stream, execute_result, display_data, error)
-- Persistent config — set URL and token once, use everywhere
+```bash
+npx skills add rarce/jupyter-link
+```
+
+Once installed, the agent uses `npx jupyter-link@0.1.0` to run commands. No global install required.
+
+## What it does
+
+- Discover running Jupyter sessions and match by notebook path or name
+- Read/write notebooks via Contents API (nbformat v4)
+- Insert or update code cells with agent metadata
+- Execute code in kernels via persistent WebSocket channels
+- Collect outputs (stream, execute_result, display_data, error)
+- Persist execution results and save notebooks
 
 ## Requirements
 
 - Node.js 20+
-- A running Jupyter Server (JupyterLab/Notebook)
-
-## Installation
-
-### As a global CLI
-```bash
-npm install -g jupyter-link
-```
-
-### Via npx (no install)
-```bash
-echo '{}' | npx jupyter-link@0.1.0 check:env
-```
-
-### As an AgentSkill
-```bash
-npx skills add <owner/repo>
-```
+- A running Jupyter Server (JupyterLab or Notebook)
 
 ## Quick Start
 
@@ -81,11 +71,13 @@ Priority: environment variables > config file > defaults.
 | Config file | `url` | `token` | `port` |
 | Default | `http://127.0.0.1:8888` | — | `32123` |
 
-## Tests
+## Standalone CLI
+
+You can also install and use it directly without the skills framework:
 
 ```bash
-npm test                    # Run all tests
-npm run test:coverage       # With coverage report
+npm install -g jupyter-link
+echo '{}' | jupyter-link check:env
 ```
 
 ## License
