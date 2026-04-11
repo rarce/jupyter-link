@@ -7,9 +7,9 @@
   "author": "Roberto Arce",
   "repository": {
     "type": "git",
-    "url": "https://github.com/robertoarce/jupyter-link.git"
+    "url": "https://github.com/rarce/jupyter-link.git"
   },
-  "homepage": "https://github.com/robertoarce/jupyter-link",
+  "homepage": "https://github.com/rarce/jupyter-link",
   "keywords": [
     "jupyter",
     "notebook",
