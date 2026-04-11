@@ -2,6 +2,14 @@
 
 An [AgentSkill](https://agentskills.io) that lets AI agents execute code in running Jupyter kernels and persist outputs back to `.ipynb` notebooks.
 
+## Why
+
+AI agents like Claude Code or Codex are great at writing and executing code, but they work in a terminal — no charts, no rich tables, no inline visualizations. Jupyter has all of that, but it's a manual, interactive tool.
+
+**jupyter-link bridges the two.** The agent writes code, executes it in your notebook's kernel, and persists the outputs — while you keep JupyterLab open as your live dashboard. Changes appear in real time. You see rendered DataFrames, plots, and errors exactly as Jupyter displays them, without copy-pasting anything.
+
+The result: **the agent codes, Jupyter renders, you supervise.** You can jump in at any point — edit a cell, re-run something, add notes — and the agent picks up where you left off. True human-AI collaboration on notebooks, where each side uses the interface it's best at.
+
 ## Install as a Skill
 
 ```bash
@@ -26,19 +34,19 @@ Once installed, the agent uses `npx jupyter-link@0.1.0` to run commands. No glob
 
 ## Quick Start
 
-```bash
-# 1. Configure connection (saved to ~/.config/jupyter-link/config.json)
-echo '{"url":"http://localhost:8888","token":"your-token"}' | npx jupyter-link@0.1.0 config:set
+1. Start your Jupyter Server (JupyterLab or Notebook)
+2. Tell your agent:
 
-# 2. Verify connectivity
-echo '{}' | npx jupyter-link@0.1.0 check:env
+> Connect to my Jupyter Server at http://localhost:8888 with token `abc123`, then run the code `print("hello")` in `notebook.ipynb`
 
-# 3. List running sessions
-echo '{}' | npx jupyter-link@0.1.0 list:sessions
+The agent will use the skill to configure the connection, open a kernel channel, execute the code, and persist the output to the notebook.
 
-# 4. Read cell outputs
-echo '{"path":"notebook.ipynb","cells":[0,1,2]}' | npx jupyter-link@0.1.0 cell:read
-```
+### Other things you can ask
+
+- *"Show me the outputs of cells 4, 8 and 12 in my notebook"*
+- *"Execute this data processing code in my notebook and save the results"*
+- *"List all running Jupyter sessions"*
+- *"Insert a new cell at the end of notebook.ipynb with this code: ..."*
 
 ## Commands
 
