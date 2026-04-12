@@ -126,6 +126,90 @@
         "channels.mjs"
       ]
     },
+    "execute:code": {
+      "aliases": [],
+      "args": {},
+      "description": "Send execute_request on an open channel and return parent_msg_id",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "execute:code",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "execute",
+        "code.mjs"
+      ]
+    },
+    "list:sessions": {
+      "aliases": [],
+      "args": {},
+      "description": "List sessions and optionally filter by path or name",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "list:sessions",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "list",
+        "sessions.mjs"
+      ]
+    },
+    "config:get": {
+      "aliases": [],
+      "args": {},
+      "description": "Show effective configuration (env vars > config file > defaults)",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "config:get",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "config",
+        "get.mjs"
+      ]
+    },
+    "config:set": {
+      "aliases": [],
+      "args": {},
+      "description": "Save Jupyter connection settings to ~/.config/jupyter-link/config.json",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "config:set",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "config",
+        "set.mjs"
+      ]
+    },
     "contents:create": {
       "aliases": [],
       "args": {},
@@ -189,14 +273,14 @@
         "write.mjs"
       ]
     },
-    "execute:code": {
+    "open:kernel-channels": {
       "aliases": [],
       "args": {},
-      "description": "Send execute_request on an open channel and return parent_msg_id",
+      "description": "Open persistent kernel WS channels and optionally connect an RTC room",
       "flags": {},
       "hasDynamicHelp": false,
       "hiddenAliases": [],
-      "id": "execute:code",
+      "id": "open:kernel-channels",
       "pluginAlias": "jupyter-link",
       "pluginName": "jupyter-link",
       "pluginType": "core",
@@ -206,29 +290,8 @@
       "relativePath": [
         "src",
         "commands",
-        "execute",
-        "code.mjs"
-      ]
-    },
-    "list:sessions": {
-      "aliases": [],
-      "args": {},
-      "description": "List sessions and optionally filter by path or name",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "list:sessions",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "list",
-        "sessions.mjs"
+        "open",
+        "kernel-channels.mjs"
       ]
     },
     "run:cell": {
@@ -252,14 +315,14 @@
         "cell.mjs"
       ]
     },
-    "open:kernel-channels": {
+    "sessions:create": {
       "aliases": [],
       "args": {},
-      "description": "Open persistent kernel WS channels and optionally connect an RTC room",
+      "description": "Create a Jupyter session (start a kernel) for a notebook",
       "flags": {},
       "hasDynamicHelp": false,
       "hiddenAliases": [],
-      "id": "open:kernel-channels",
+      "id": "sessions:create",
       "pluginAlias": "jupyter-link",
       "pluginName": "jupyter-link",
       "pluginType": "core",
@@ -269,8 +332,8 @@
       "relativePath": [
         "src",
         "commands",
-        "open",
-        "kernel-channels.mjs"
+        "sessions",
+        "create.mjs"
       ]
     },
     "save:notebook": {
@@ -293,70 +356,7 @@
         "save",
         "notebook.mjs"
       ]
-    },
-    "config:get": {
-      "aliases": [],
-      "args": {},
-      "description": "Show effective configuration (env vars > config file > defaults)",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "config:get",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "config",
-        "get.mjs"
-      ]
-    },
-    "config:set": {
-      "aliases": [],
-      "args": {},
-      "description": "Save Jupyter connection settings to ~/.config/jupyter-link/config.json",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "config:set",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "config",
-        "set.mjs"
-      ]
-    },
-    "sessions:create": {
-      "aliases": [],
-      "args": {},
-      "description": "Create a Jupyter session (start a kernel) for a notebook",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "sessions:create",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "sessions",
-        "create.mjs"
-      ]
     }
   },
-  "version": "0.2.3"
+  "version": "0.2.4"
 }

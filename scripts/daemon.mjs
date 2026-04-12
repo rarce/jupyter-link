@@ -41,9 +41,15 @@ export function handleOpen({ baseUrl, token, kernelId }) {
   const ref = 'ch-' + crypto.randomBytes(6).toString('hex');
   const state = { ws, sessionId, kernelId, url, outputsByParent: new Map(), ready: false };
   channels.set(ref, state);
-  ws.on('open', () => { state.ready = true; });
-  ws.on('message', (data) => {
-    let msg; try { msg = JSON.parse(data.toString()); } catch { return; }
+  ws.addEventListener('open', () => { state.ready = true; });
+  ws.addEventListener('message', (event) => {
+    const raw = event.data;
+    const text = typeof raw === 'string'
+      ? raw
+      : raw instanceof ArrayBuffer
+        ? Buffer.from(raw).toString('utf8')
+        : Buffer.from(raw.buffer || raw).toString('utf8');
+    let msg; try { msg = JSON.parse(text); } catch { return; }
     const parentId = msg.parent_header && msg.parent_header.msg_id;
     if (!parentId) return;
     let agg = state.outputsByParent.get(parentId);
@@ -65,8 +71,8 @@ export function handleOpen({ baseUrl, token, kernelId }) {
       if (agg.resolve) agg.resolve();
     }
   });
-  ws.on('close', () => { state.ready = false; state.dead = true; });
-  ws.on('error', () => { state.ready = false; state.dead = true; });
+  ws.addEventListener('close', () => { state.ready = false; state.dead = true; });
+  ws.addEventListener('error', () => { state.ready = false; state.dead = true; });
   return { channel_ref: ref, session_id: sessionId };
 }
 

@@ -2,12 +2,13 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { YNotebook } from '@jupyter/ydoc';
 
 class FakeWS {
-  constructor() { this.readyState = 0; this.sent = []; this._h = {}; FakeWS.last = this; }
-  on(t, fn) { this._h[t] = fn; }
+  constructor() { this.readyState = 0; this.sent = []; this._h = { open: [], message: [], close: [], error: [] }; FakeWS.last = this; }
+  addEventListener(t, fn) { (this._h[t] ||= []).push(fn); }
   send(d) { this.sent.push(d); }
-  close() { if (this._h.close) this._h.close(); }
-  _open() { this.readyState = 1; if (this._h.open) this._h.open(); }
-  _msg(obj) { if (this._h.message) this._h.message(Buffer.from(JSON.stringify(obj))); }
+  close() { for (const fn of this._h.close) fn({}); }
+  _fire(t, ev) { for (const fn of this._h[t] || []) fn(ev); }
+  _open() { this.readyState = 1; this._fire('open', {}); }
+  _msg(obj) { this._fire('message', { data: JSON.stringify(obj) }); }
 }
 
 let origWS;
@@ -103,12 +104,11 @@ describe('daemon handlers: kernel channels', () => {
   test('ws message ignores bad json and unknown parent', () => {
     d.handleOpen({ baseUrl: 'http://h', kernelId: 'k' });
     const ws = FakeWS.last;
-    ws._h.message(Buffer.from('not-json'));
+    ws._fire('message', { data: 'not-json' });
     ws._msg({ channel: 'iopub', header: {} }); // no parent_header
     ws._msg({ channel: 'iopub', parent_header: { msg_id: 'unknown' }, header: {} });
-    // ws close/error don't throw
-    ws._h.close();
-    expect(d.channels.size).toBe(1); // state remains, just marked dead
+    ws.close();
+    expect(d.channels.size).toBe(1);
   });
 });
 
