@@ -1,6 +1,6 @@
 {
   "name": "jupyter-link",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "CLI and AgentSkill to execute code in Jupyter kernels and persist outputs to notebooks",
   "type": "module",
   "license": "MIT",

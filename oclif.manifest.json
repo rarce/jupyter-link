@@ -84,69 +84,6 @@
         "env.mjs"
       ]
     },
-    "close:channels": {
-      "aliases": [],
-      "args": {},
-      "description": "Close a previously opened channel_ref (and optionally an RTC room_ref)",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "close:channels",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "close",
-        "channels.mjs"
-      ]
-    },
-    "config:get": {
-      "aliases": [],
-      "args": {},
-      "description": "Show effective configuration (env vars > config file > defaults)",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "config:get",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "config",
-        "get.mjs"
-      ]
-    },
-    "config:set": {
-      "aliases": [],
-      "args": {},
-      "description": "Save Jupyter connection settings to ~/.config/jupyter-link/config.json",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "config:set",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "config",
-        "set.mjs"
-      ]
-    },
     "collect:outputs": {
       "aliases": [],
       "args": {},
@@ -166,69 +103,6 @@
         "commands",
         "collect",
         "outputs.mjs"
-      ]
-    },
-    "contents:create": {
-      "aliases": [],
-      "args": {},
-      "description": "Create a new empty notebook with proper nbformat v4 boilerplate",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "contents:create",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "contents",
-        "create.mjs"
-      ]
-    },
-    "contents:read": {
-      "aliases": [],
-      "args": {},
-      "description": "Read a notebook JSON via Contents API",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "contents:read",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "contents",
-        "read.mjs"
-      ]
-    },
-    "contents:write": {
-      "aliases": [],
-      "args": {},
-      "description": "Write notebook JSON via Contents API",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "contents:write",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "contents",
-        "write.mjs"
       ]
     },
     "execute:code": {
@@ -356,7 +230,133 @@
         "sessions",
         "create.mjs"
       ]
+    },
+    "close:channels": {
+      "aliases": [],
+      "args": {},
+      "description": "Close a previously opened channel_ref (and optionally an RTC room_ref)",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "close:channels",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "close",
+        "channels.mjs"
+      ]
+    },
+    "contents:create": {
+      "aliases": [],
+      "args": {},
+      "description": "Create a new empty notebook with proper nbformat v4 boilerplate",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "contents:create",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "contents",
+        "create.mjs"
+      ]
+    },
+    "contents:read": {
+      "aliases": [],
+      "args": {},
+      "description": "Read a notebook JSON via Contents API",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "contents:read",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "contents",
+        "read.mjs"
+      ]
+    },
+    "contents:write": {
+      "aliases": [],
+      "args": {},
+      "description": "Write notebook JSON via Contents API",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "contents:write",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "contents",
+        "write.mjs"
+      ]
+    },
+    "config:get": {
+      "aliases": [],
+      "args": {},
+      "description": "Show effective configuration (env vars > config file > defaults)",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "config:get",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "config",
+        "get.mjs"
+      ]
+    },
+    "config:set": {
+      "aliases": [],
+      "args": {},
+      "description": "Save Jupyter connection settings to ~/.config/jupyter-link/config.json",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "config:set",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "config",
+        "set.mjs"
+      ]
     }
   },
-  "version": "0.2.1"
+  "version": "0.2.2"
 }
