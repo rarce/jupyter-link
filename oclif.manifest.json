@@ -105,6 +105,48 @@
         "channels.mjs"
       ]
     },
+    "config:get": {
+      "aliases": [],
+      "args": {},
+      "description": "Show effective configuration (env vars > config file > defaults)",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "config:get",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "config",
+        "get.mjs"
+      ]
+    },
+    "config:set": {
+      "aliases": [],
+      "args": {},
+      "description": "Save Jupyter connection settings to ~/.config/jupyter-link/config.json",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "config:set",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "config",
+        "set.mjs"
+      ]
+    },
     "collect:outputs": {
       "aliases": [],
       "args": {},
@@ -187,48 +229,6 @@
         "commands",
         "contents",
         "write.mjs"
-      ]
-    },
-    "config:get": {
-      "aliases": [],
-      "args": {},
-      "description": "Show effective configuration (env vars > config file > defaults)",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "config:get",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "config",
-        "get.mjs"
-      ]
-    },
-    "config:set": {
-      "aliases": [],
-      "args": {},
-      "description": "Save Jupyter connection settings to ~/.config/jupyter-link/config.json",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "config:set",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "config",
-        "set.mjs"
       ]
     },
     "execute:code": {

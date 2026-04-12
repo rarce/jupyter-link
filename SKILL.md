@@ -89,6 +89,9 @@ echo '{"path":"notebooks/my.ipynb","nb_json":{...}}' | npx jupyter-link@0.2.1 co
 ```bash
 echo '{"path":"notebooks/my.ipynb","code":"print(42)"}' | npx jupyter-link@0.2.1 cell:insert
 echo '{"path":"notebooks/my.ipynb","code":"print(42)","index":0}' | npx jupyter-link@0.2.1 cell:insert
+
+# With RTC: insert via Y.Doc (instant in JupyterLab)
+echo '{"room_ref":"room-...","code":"print(42)"}' | npx jupyter-link@0.2.1 cell:insert
 ```
 Returns `{"cell_id":N,"index":N}`. Defaults to appending at end.
 
@@ -96,6 +99,9 @@ Returns `{"cell_id":N,"index":N}`. Defaults to appending at end.
 ```bash
 echo '{"path":"notebooks/my.ipynb","cell_id":3,"code":"x=1"}' | npx jupyter-link@0.2.1 cell:update
 echo '{"path":"notebooks/my.ipynb","cell_id":3,"outputs":[...],"execution_count":5}' | npx jupyter-link@0.2.1 cell:update
+
+# With RTC: update via Y.Doc
+echo '{"room_ref":"room-...","cell_id":3,"code":"x=1"}' | npx jupyter-link@0.2.1 cell:update
 ```
 If `cell_id` is omitted, updates the latest agent-managed cell.
 
@@ -103,17 +109,26 @@ If `cell_id` is omitted, updates the latest agent-managed cell.
 ```bash
 echo '{"path":"notebooks/my.ipynb"}' | npx jupyter-link@0.2.1 open:kernel-channels
 echo '{"kernel_id":"..."}' | npx jupyter-link@0.2.1 open:kernel-channels
+
+# With RTC (real-time collaboration) — agent appears as collaborator in JupyterLab
+echo '{"path":"notebooks/my.ipynb","rtc":true}' | npx jupyter-link@0.2.1 open:kernel-channels
+echo '{"path":"notebooks/my.ipynb","rtc":"auto"}' | npx jupyter-link@0.2.1 open:kernel-channels
 ```
 Returns `{"channel_ref":"ch-...","session_id":"..."}`. Auto-starts daemon if needed.
 **Auto-creates session**: If no running session exists for the notebook, automatically creates one (defaults to `python3` kernel, override with `kernel_name`).
+When `rtc` is `true` or `"auto"`, also returns `room_ref` and `rtc_connected:true` if jupyter-collaboration is available. Pass `room_ref` to subsequent commands to use the RTC path. With `"auto"`, RTC failures are silently ignored.
 
 ### Run cell (insert + execute + collect + update in one step)
 ```bash
 echo '{"path":"notebooks/my.ipynb","channel_ref":"ch-...","code":"print(42)"}' | npx jupyter-link@0.2.1 run:cell
 echo '{"path":"notebooks/my.ipynb","channel_ref":"ch-...","code":"import time; time.sleep(5)","timeout_s":30}' | npx jupyter-link@0.2.1 run:cell
+
+# With RTC: outputs stream live to JupyterLab during execution
+echo '{"channel_ref":"ch-...","room_ref":"room-...","code":"print(42)"}' | npx jupyter-link@0.2.1 run:cell
 ```
 Returns `{"cell_id":N,"status":"ok"|"error","execution_count":N,"outputs":[...]}`.
 This is the **recommended** way to execute code — it handles the full pipeline: insert cell, execute on kernel, collect outputs, and update the cell with results.
+When `room_ref` is provided, outputs are streamed to the notebook in real time (every ~200ms) so JupyterLab shows them as they arrive.
 
 ### Execute code on a channel
 ```bash
@@ -131,12 +146,16 @@ Returns `{"outputs":[...],"execution_count":N,"status":"ok"|"error"|"timeout"}`.
 ### Close channels
 ```bash
 echo '{"channel_ref":"ch-..."}' | npx jupyter-link@0.2.1 close:channels
+
+# With RTC: also disconnect the room
+echo '{"channel_ref":"ch-...","room_ref":"room-..."}' | npx jupyter-link@0.2.1 close:channels
 ```
 
 ### Save notebook
 ```bash
 echo '{"path":"notebooks/my.ipynb"}' | npx jupyter-link@0.2.1 save:notebook
 ```
+When using RTC (`room_ref` provided), this is a **no-op** — the server auto-saves Y.Doc changes to disk.
 
 ## Typical workflow
 
@@ -144,10 +163,19 @@ echo '{"path":"notebooks/my.ipynb"}' | npx jupyter-link@0.2.1 save:notebook
 1. **Configure**: `echo '{"url":"...","token":"..."}' | npx jupyter-link@0.2.1 config:set`
 2. **Check env**: `echo '{}' | npx jupyter-link@0.2.1 check:env`
 3. **Create notebook** (if needed): `echo '{"path":"..."}' | npx jupyter-link@0.2.1 contents:create`
-4. **Open channel**: `echo '{"path":"..."}' | npx jupyter-link@0.2.1 open:kernel-channels` → get `channel_ref` (auto-creates session if needed)
-5. **Run cell** (repeat): `echo '{"path":"...","channel_ref":"...","code":"..."}' | npx jupyter-link@0.2.1 run:cell` → get `cell_id`, `status`, `outputs`
+4. **Open channel**: `echo '{"path":"..."}' | npx jupyter-link@0.2.1 open:kernel-channels` -> get `channel_ref` (auto-creates session if needed)
+5. **Run cell** (repeat): `echo '{"path":"...","channel_ref":"...","code":"..."}' | npx jupyter-link@0.2.1 run:cell` -> get `cell_id`, `status`, `outputs`
 6. **Save**: `echo '{"path":"..."}' | npx jupyter-link@0.2.1 save:notebook`
 7. **Close**: `echo '{"channel_ref":"..."}' | npx jupyter-link@0.2.1 close:channels`
+
+### Recommended with RTC (real-time collaboration)
+1. **Configure**: `echo '{"url":"...","token":"..."}' | npx jupyter-link@0.2.1 config:set`
+2. **Check env**: `echo '{}' | npx jupyter-link@0.2.1 check:env` (look for `rtc_available: true`)
+3. **Create notebook** (if needed): `echo '{"path":"..."}' | npx jupyter-link@0.2.1 contents:create`
+4. **Open channel + RTC**: `echo '{"path":"...","rtc":true}' | npx jupyter-link@0.2.1 open:kernel-channels` -> get `channel_ref` + `room_ref`
+5. **Run cell** (repeat): `echo '{"channel_ref":"...","room_ref":"...","code":"..."}' | npx jupyter-link@0.2.1 run:cell` -> outputs stream live to JupyterLab
+6. **Close**: `echo '{"channel_ref":"...","room_ref":"..."}' | npx jupyter-link@0.2.1 close:channels`
+   (No save needed — server auto-saves Y.Doc changes)
 
 ### Granular (step-by-step control)
 1. **Configure**: `echo '{"url":"...","token":"..."}' | npx jupyter-link@0.2.1 config:set`
@@ -167,6 +195,8 @@ echo '{"path":"notebooks/my.ipynb"}' | npx jupyter-link@0.2.1 save:notebook
 - Inserts cells at end by default. Reuses latest agent cell (`metadata.agent.role="jupyter-driver"`) when `cell_id` is omitted in update.
 - Kernel errors are surfaced as `error` outputs with traceback.
 - Persistent channels are managed by a daemon on `127.0.0.1:${JUPYTER_LINK_PORT:-32123}`. Auto-starts on first use.
+- **RTC is optional**: Pass `room_ref` to commands for real-time collaboration. Without it, everything works via REST API as before.
+- With RTC, the agent appears as a collaborator named "jupyter-link-agent" in JupyterLab. Customize via `agentName`/`agentColor` in `rtc:connect` args.
 
 ## Canonical parameter names
 
@@ -175,6 +205,8 @@ echo '{"path":"notebooks/my.ipynb"}' | npx jupyter-link@0.2.1 save:notebook
 | `path`         | `notebook`   | All notebook commands               |
 | `code`         | `source`     | insert, update, execute, run:cell   |
 | `channel_ref`  | `ref`        | execute, collect, close, run:cell   |
+| `room_ref`     | —            | cell:insert, cell:update, cell:read, run:cell, close:channels, save:notebook |
 | `parent_msg_id`| `parent_id`  | collect                             |
 | `nb_json`      | `content`    | write                               |
 | `kernel_name`  | `kernel`     | sessions:create, contents:create, open:kernel-channels |
+| `rtc`          | —            | open:kernel-channels (`true` or `"auto"`) |

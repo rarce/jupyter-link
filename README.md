@@ -26,6 +26,31 @@ Once installed, the agent uses `npx jupyter-link@0.1.0` to run commands. No glob
 - Execute code in kernels via persistent WebSocket channels
 - Collect outputs (stream, execute_result, display_data, error)
 - Persist execution results and save notebooks
+- **Real-time collaboration**: appear as a visible collaborator in JupyterLab when `jupyter-collaboration` is installed
+
+## Real-Time Collaboration (RTC)
+
+When the Jupyter server has the [`jupyter-collaboration`](https://github.com/jupyterlab/jupyter-collaboration) extension installed, jupyter-link can operate as a real-time collaborator using the Yjs CRDT protocol. This means:
+
+- **Live visibility**: The agent appears as a named collaborator in JupyterLab (with a colored cursor), so you can see exactly when it's working.
+- **Instant cell updates**: Inserted cells and outputs appear immediately in JupyterLab without needing to save — changes propagate via Y.Doc sync, not REST PUT.
+- **Streaming outputs**: During code execution, outputs are pushed to the notebook in real time (every 200ms), so you see `print()` output as it happens, not only after execution finishes.
+- **No-op saves**: With RTC active, `save:notebook` is a no-op — the server auto-saves Y.Doc changes to disk.
+
+### Enabling RTC
+
+1. Install `jupyter-collaboration` on your Jupyter server:
+   ```bash
+   pip install jupyter-collaboration
+   ```
+2. Pass `"rtc": true` (or `"rtc": "auto"`) when opening kernel channels:
+   ```bash
+   echo '{"path":"notebook.ipynb","rtc":true}' | npx jupyter-link@0.2.1 open:kernel-channels
+   ```
+   This returns a `room_ref` alongside the usual `channel_ref`.
+3. Pass `room_ref` to subsequent commands (`run:cell`, `cell:insert`, `cell:update`, `cell:read`, `close:channels`) to use the RTC path.
+
+If `jupyter-collaboration` is not installed, everything works exactly as before via the REST API. When `rtc` is `"auto"`, RTC connection failures are silently ignored and the REST path is used.
 
 ## Requirements
 

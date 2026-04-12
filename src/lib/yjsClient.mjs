@@ -13,6 +13,7 @@
 
 import * as Y from 'yjs';
 import * as syncProtocol from 'y-protocols/sync';
+import * as awarenessProtocol from 'y-protocols/awareness';
 import * as encoding from 'lib0/encoding';
 import * as decoding from 'lib0/decoding';
 import { YNotebook } from '@jupyter/ydoc';
@@ -22,6 +23,10 @@ import { roomWsUrl } from './rtcDetect.mjs';
 const MSG_SYNC = 0;
 const MSG_AWARENESS = 1;
 
+// Default agent identity for awareness
+const DEFAULT_AGENT_NAME = 'jupyter-link-agent';
+const DEFAULT_AGENT_COLOR = '#FF6B35';
+
 /**
  * Connect to a jupyter-collaboration room and return a RoomHandle.
  *
@@ -30,9 +35,11 @@ const MSG_AWARENESS = 1;
  * @param {string} opts.token - Auth token
  * @param {string} opts.roomId - Room identifier (e.g. "json:notebook:{fileId}")
  * @param {number} [opts.syncTimeoutMs=15000] - Max time to wait for initial sync
+ * @param {string} [opts.agentName='jupyter-link-agent'] - Display name for awareness
+ * @param {string} [opts.agentColor='#FF6B35'] - CSS color for awareness cursor
  * @returns {Promise<RoomHandle>}
  */
-export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000 }) {
+export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000, agentName, agentColor }) {
   return new Promise((resolve, reject) => {
     const wsUrl = roomWsUrl(baseUrl, token, roomId);
 
@@ -41,6 +48,16 @@ export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000 }) {
     // Bind the YNotebook to the same Y.Doc so they share state
     // YNotebook expects to own its own ydoc — we'll use its internal ydoc
     const sharedDoc = notebook.ydoc;
+
+    // Awareness: makes this client visible as a collaborator in JupyterLab
+    const awareness = new awarenessProtocol.Awareness(sharedDoc);
+    const displayName = agentName || DEFAULT_AGENT_NAME;
+    const displayColor = agentColor || DEFAULT_AGENT_COLOR;
+    awareness.setLocalStateField('user', {
+      name: displayName,
+      username: displayName,
+      color: displayColor,
+    });
 
     const WS = globalThis.WebSocket;
     if (!WS) {
@@ -59,6 +76,7 @@ export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000 }) {
       ws,
       ydoc: sharedDoc,
       notebook,
+      awareness,
       roomId,
       synced: false,
       dead: false,
@@ -67,6 +85,8 @@ export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000 }) {
         dead = true;
         handle.dead = true;
         if (syncTimer) clearTimeout(syncTimer);
+        awareness.setLocalState(null); // Remove our awareness state
+        awareness.destroy();
         try { ws.close(); } catch {}
         notebook.dispose();
       },
@@ -87,6 +107,15 @@ export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000 }) {
       sendSyncMessage((enc) => {
         syncProtocol.writeSyncStep1(enc, sharedDoc);
       });
+    }
+
+    function sendAwarenessUpdate() {
+      if (ws.readyState !== 1 /* OPEN */) return;
+      const encoder = encoding.createEncoder();
+      encoding.writeVarUint(encoder, MSG_AWARENESS);
+      const update = awarenessProtocol.encodeAwarenessUpdate(awareness, [sharedDoc.clientID]);
+      encoding.writeVarUint8Array(encoder, update);
+      ws.send(encoding.toUint8Array(encoder));
     }
 
     // --- Incoming handler ---
@@ -119,7 +148,13 @@ export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000 }) {
           resolve(handle);
         }
       } else if (msgType === MSG_AWARENESS) {
-        // We don't process awareness in PR1 — just skip
+        // Apply awareness updates from other collaborators
+        try {
+          const update = decoding.readVarUint8Array(decoder);
+          awarenessProtocol.applyAwarenessUpdate(awareness, update, 'remote');
+        } catch {
+          // Ignore malformed awareness messages
+        }
       }
     }
 
@@ -134,10 +169,28 @@ export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000 }) {
 
     sharedDoc.on('update', onDocUpdate);
 
+    // --- Awareness change listener: propagate local changes to server ---
+
+    function onAwarenessChange({ added, updated, removed }, origin) {
+      if (origin === 'remote' || dead) return;
+      const changedClients = added.concat(updated).concat(removed);
+      if (changedClients.length === 0) return;
+      if (ws.readyState !== 1 /* OPEN */) return;
+      const encoder = encoding.createEncoder();
+      encoding.writeVarUint(encoder, MSG_AWARENESS);
+      const update = awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients);
+      encoding.writeVarUint8Array(encoder, update);
+      ws.send(encoding.toUint8Array(encoder));
+    }
+
+    awareness.on('change', onAwarenessChange);
+
     // --- WebSocket lifecycle ---
 
     ws.addEventListener('open', () => {
       sendSyncStep1();
+      // Announce our awareness (agent identity) to other collaborators
+      sendAwarenessUpdate();
     });
 
     ws.addEventListener('message', onMessage);
@@ -147,6 +200,7 @@ export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000 }) {
       handle.dead = true;
       handle.synced = false;
       sharedDoc.off('update', onDocUpdate);
+      awareness.off('change', onAwarenessChange);
       if (!synced) {
         if (syncTimer) clearTimeout(syncTimer);
         reject(new Error('WebSocket closed before sync completed'));
@@ -157,6 +211,7 @@ export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000 }) {
       dead = true;
       handle.dead = true;
       sharedDoc.off('update', onDocUpdate);
+      awareness.off('change', onAwarenessChange);
       if (!synced) {
         if (syncTimer) clearTimeout(syncTimer);
         reject(new Error(`WebSocket error: ${err.message || 'unknown'}`));

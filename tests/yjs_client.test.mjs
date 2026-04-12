@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import * as Y from 'yjs';
 import * as syncProtocol from 'y-protocols/sync';
+import * as awarenessProtocol from 'y-protocols/awareness';
 import * as encoding from 'lib0/encoding';
 import * as decoding from 'lib0/decoding';
 import { YNotebook } from '@jupyter/ydoc';
@@ -182,3 +183,129 @@ function syncDocs(doc1, doc2) {
     syncProtocol.readSyncMessage(d4, r4, doc2, null);
   }
 }
+
+describe('Awareness protocol', () => {
+  test('Awareness instance can be created and local state set', () => {
+    const doc = new Y.Doc();
+    const awareness = new awarenessProtocol.Awareness(doc);
+    awareness.setLocalStateField('user', {
+      name: 'jupyter-link-agent',
+      username: 'jupyter-link-agent',
+      color: '#FF6B35',
+    });
+    const state = awareness.getLocalState();
+    expect(state).toBeDefined();
+    expect(state.user.name).toBe('jupyter-link-agent');
+    expect(state.user.color).toBe('#FF6B35');
+    awareness.destroy();
+  });
+
+  test('Awareness updates encode and decode correctly', () => {
+    const doc1 = new Y.Doc();
+    const awareness1 = new awarenessProtocol.Awareness(doc1);
+    awareness1.setLocalStateField('user', { name: 'agent-1', color: '#FF0000' });
+
+    const doc2 = new Y.Doc();
+    const awareness2 = new awarenessProtocol.Awareness(doc2);
+    awareness2.setLocalStateField('user', { name: 'human-user', color: '#0000FF' });
+
+    // Encode awareness1's state and apply to awareness2
+    const update = awarenessProtocol.encodeAwarenessUpdate(awareness1, [doc1.clientID]);
+    awarenessProtocol.applyAwarenessUpdate(awareness2, update, 'remote');
+
+    // awareness2 should now know about awareness1's client
+    const states = awareness2.getStates();
+    const agent1State = states.get(doc1.clientID);
+    expect(agent1State).toBeDefined();
+    expect(agent1State.user.name).toBe('agent-1');
+    expect(agent1State.user.color).toBe('#FF0000');
+
+    // awareness2 should still have its own state
+    const localState = awareness2.getLocalState();
+    expect(localState.user.name).toBe('human-user');
+
+    awareness1.destroy();
+    awareness2.destroy();
+  });
+
+  test('Awareness message framing with MSG_AWARENESS=1 prefix', () => {
+    const doc = new Y.Doc();
+    const awareness = new awarenessProtocol.Awareness(doc);
+    awareness.setLocalStateField('user', { name: 'test', color: '#333' });
+
+    // Encode as we do in yjsClient.mjs
+    const encoder = encoding.createEncoder();
+    encoding.writeVarUint(encoder, 1); // MSG_AWARENESS = 1
+    const update = awarenessProtocol.encodeAwarenessUpdate(awareness, [doc.clientID]);
+    encoding.writeVarUint8Array(encoder, update);
+    const buf = encoding.toUint8Array(encoder);
+
+    // Decode and verify
+    const decoder = decoding.createDecoder(buf);
+    const msgType = decoding.readVarUint(decoder);
+    expect(msgType).toBe(1);
+
+    const decodedUpdate = decoding.readVarUint8Array(decoder);
+    expect(decodedUpdate).toBeInstanceOf(Uint8Array);
+    expect(decodedUpdate.length).toBeGreaterThan(0);
+
+    // Apply to another awareness and verify
+    const doc2 = new Y.Doc();
+    const awareness2 = new awarenessProtocol.Awareness(doc2);
+    awarenessProtocol.applyAwarenessUpdate(awareness2, decodedUpdate, 'remote');
+    const remoteState = awareness2.getStates().get(doc.clientID);
+    expect(remoteState).toBeDefined();
+    expect(remoteState.user.name).toBe('test');
+
+    awareness.destroy();
+    awareness2.destroy();
+  });
+
+  test('setLocalState(null) clears awareness', () => {
+    const doc = new Y.Doc();
+    const awareness = new awarenessProtocol.Awareness(doc);
+    awareness.setLocalStateField('user', { name: 'agent', color: '#FFF' });
+    expect(awareness.getLocalState()).not.toBeNull();
+
+    awareness.setLocalState(null);
+    expect(awareness.getLocalState()).toBeNull();
+
+    awareness.destroy();
+  });
+
+  test('multiple collaborators visible in getStates()', () => {
+    const doc1 = new Y.Doc();
+    const aw1 = new awarenessProtocol.Awareness(doc1);
+    aw1.setLocalStateField('user', { name: 'agent', color: '#FF6B35' });
+
+    const doc2 = new Y.Doc();
+    const aw2 = new awarenessProtocol.Awareness(doc2);
+    aw2.setLocalStateField('user', { name: 'alice', color: '#00FF00' });
+
+    const doc3 = new Y.Doc();
+    const aw3 = new awarenessProtocol.Awareness(doc3);
+    aw3.setLocalStateField('user', { name: 'bob', color: '#0000FF' });
+
+    // Simulate: aw1 receives updates from aw2 and aw3
+    const update2 = awarenessProtocol.encodeAwarenessUpdate(aw2, [doc2.clientID]);
+    const update3 = awarenessProtocol.encodeAwarenessUpdate(aw3, [doc3.clientID]);
+    awarenessProtocol.applyAwarenessUpdate(aw1, update2, 'remote');
+    awarenessProtocol.applyAwarenessUpdate(aw1, update3, 'remote');
+
+    const states = aw1.getStates();
+    // Should see 3 clients: self + 2 remote
+    expect(states.size).toBe(3);
+
+    const names = [];
+    for (const [, state] of states) {
+      if (state && state.user) names.push(state.user.name);
+    }
+    expect(names).toContain('agent');
+    expect(names).toContain('alice');
+    expect(names).toContain('bob');
+
+    aw1.destroy();
+    aw2.destroy();
+    aw3.destroy();
+  });
+});

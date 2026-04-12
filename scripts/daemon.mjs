@@ -74,11 +74,49 @@ function handleExec({ channel_ref, code, allow_stdin = false, stop_on_error = tr
   return { parent_msg_id: parentId };
 }
 
-async function handleCollect({ channel_ref, parent_msg_id, timeout_s = 60 }) {
+async function handleCollect({ channel_ref, parent_msg_id, timeout_s = 60, room_ref, cell_id }) {
   const ch = channels.get(channel_ref);
   if (!ch) throw new Error('unknown channel_ref');
   const agg = ch.outputsByParent.get(parent_msg_id);
   if (!agg) throw new Error('unknown parent_msg_id');
+
+  // If room_ref + cell_id provided, stream outputs to Y.Doc as they arrive
+  let rtcRoom = null;
+  let rtcCellIdx = null;
+  if (room_ref && cell_id !== undefined && cell_id !== null) {
+    const st = rooms.get(room_ref);
+    if (st && !st.handle.dead) {
+      rtcRoom = st;
+      rtcCellIdx = cell_id;
+    }
+  }
+
+  // Snapshot output count so we know when new outputs arrive
+  let lastPushed = 0;
+
+  function pushLiveOutputs() {
+    if (!rtcRoom || rtcCellIdx === null) return;
+    try {
+      const notebook = rtcRoom.handle.notebook;
+      if (rtcCellIdx < notebook.cells.length) {
+        const cell = notebook.getCell(rtcCellIdx);
+        // Push all outputs accumulated so far
+        if (agg.outputs.length > lastPushed) {
+          cell.setOutputs([...agg.outputs]);
+          lastPushed = agg.outputs.length;
+        }
+      }
+    } catch {
+      // Non-fatal: if Y.Doc write fails, we still collect outputs normally
+    }
+  }
+
+  // Set up a polling interval for live streaming (every 200ms)
+  let liveInterval = null;
+  if (rtcRoom) {
+    liveInterval = setInterval(pushLiveOutputs, 200);
+  }
+
   let timedOut = false;
   if (!(agg.gotReply && agg.gotIdle)) {
     await new Promise((resolve, reject) => {
@@ -86,6 +124,11 @@ async function handleCollect({ channel_ref, parent_msg_id, timeout_s = 60 }) {
       agg.resolve = () => { clearTimeout(timer); resolve(); };
     });
   }
+
+  // Final push of all outputs
+  if (liveInterval) clearInterval(liveInterval);
+  pushLiveOutputs();
+
   const status = timedOut ? 'timeout' : (agg.status || (agg.gotReply ? 'ok' : 'unknown'));
   // Clean up to prevent memory leak
   ch.outputsByParent.delete(parent_msg_id);
@@ -113,7 +156,7 @@ async function handleRtcDetect({ baseUrl, token }) {
   return detectRTC(baseUrl, token);
 }
 
-async function handleRtcConnect({ baseUrl, token, notebookPath, syncTimeoutMs }) {
+async function handleRtcConnect({ baseUrl, token, notebookPath, syncTimeoutMs, agentName, agentColor }) {
   if (!baseUrl || !notebookPath) throw new Error('baseUrl and notebookPath are required');
   // Resolve room ID from notebook path
   const { sessionId, fileId, roomId, path } = await resolveRoom(baseUrl, token, notebookPath);
@@ -124,7 +167,7 @@ async function handleRtcConnect({ baseUrl, token, notebookPath, syncTimeoutMs })
     }
   }
   // Connect via Yjs WebSocket
-  const handle = await connectRoom({ baseUrl, token, roomId, syncTimeoutMs });
+  const handle = await connectRoom({ baseUrl, token, roomId, syncTimeoutMs, agentName, agentColor });
   const ref = 'room-' + crypto.randomBytes(6).toString('hex');
   rooms.set(ref, { handle, roomId, path, baseUrl, fileId });
   return { room_ref: ref, room_id: roomId, file_id: fileId, path, synced: handle.synced };
@@ -143,7 +186,15 @@ function handleRtcStatus({ room_ref }) {
     const st = rooms.get(room_ref);
     if (!st) throw new Error('unknown room_ref');
     const nb = notebookToJSON(st.handle);
-    return { room_ref, room_id: st.roomId, path: st.path, synced: st.handle.synced, dead: st.handle.dead, cells: nb.cells ? nb.cells.length : 0 };
+    // Gather awareness info: list of connected collaborators
+    const awarenessStates = st.handle.awareness.getStates();
+    const collaborators = [];
+    for (const [clientId, state] of awarenessStates) {
+      if (state && state.user) {
+        collaborators.push({ clientId, name: state.user.name, color: state.user.color });
+      }
+    }
+    return { room_ref, room_id: st.roomId, path: st.path, synced: st.handle.synced, dead: st.handle.dead, cells: nb.cells ? nb.cells.length : 0, collaborators };
   }
   // List all rooms
   const arr = [];

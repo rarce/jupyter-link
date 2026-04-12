@@ -57,8 +57,13 @@ export default class RunCell extends Command {
     if (execOut.error) throw new Error(execOut.error);
     const parentMsgId = execOut.parent_msg_id;
 
-    // --- Step 3: Collect outputs ---
-    const collectOut = await request('collect', { channel_ref: channelRef, parent_msg_id: parentMsgId, timeout_s: timeoutS });
+    // --- Step 3: Collect outputs (with live streaming if RTC) ---
+    const collectArgs = { channel_ref: channelRef, parent_msg_id: parentMsgId, timeout_s: timeoutS };
+    if (roomRef) {
+      collectArgs.room_ref = roomRef;
+      collectArgs.cell_id = cellId;
+    }
+    const collectOut = await request('collect', collectArgs);
     if (collectOut.error) throw new Error(collectOut.error);
     const outputs = collectOut.outputs || [];
     const executionCount = collectOut.execution_count;

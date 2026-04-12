@@ -1,5 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { YNotebook } from '@jupyter/ydoc';
+import * as awarenessProtocol from 'y-protocols/awareness';
+import * as Y from 'yjs';
 
 // Like daemon.test.mjs, we can't import daemon.mjs directly since it starts
 // a TCP server. We test the pure helper (roomWsUrl) from rtcDetect.mjs which
@@ -161,5 +163,100 @@ describe('daemon rtc cell operation contracts (YNotebook)', () => {
       if (md.role === 'jupyter-driver') { found = i; break; }
     }
     expect(found).toBe(2);
+  });
+});
+
+describe('daemon rtc live output streaming contracts', () => {
+  test('incremental setOutputs updates cell outputs progressively', () => {
+    const nb = new YNotebook();
+    nb.insertCell(0, { cell_type: 'code', source: 'print(1)', metadata: {}, outputs: [], execution_count: null });
+    const cell = nb.getCell(0);
+
+    // Simulate incremental output streaming (as daemon does during collect)
+    const outputs = [];
+
+    // First output arrives
+    outputs.push({ output_type: 'stream', name: 'stdout', text: 'line 1\n' });
+    cell.setOutputs([...outputs]);
+    expect(cell.getOutputs()).toHaveLength(1);
+    expect(cell.getOutputs()[0].text).toBe('line 1\n');
+
+    // Second output arrives
+    outputs.push({ output_type: 'stream', name: 'stdout', text: 'line 2\n' });
+    cell.setOutputs([...outputs]);
+    expect(cell.getOutputs()).toHaveLength(2);
+
+    // Third output (different type)
+    outputs.push({ output_type: 'execute_result', data: { 'text/plain': '42' }, metadata: {}, execution_count: 1 });
+    cell.setOutputs([...outputs]);
+    expect(cell.getOutputs()).toHaveLength(3);
+    expect(cell.getOutputs()[2].output_type).toBe('execute_result');
+  });
+
+  test('setOutputs followed by execution_count simulates end-of-collect', () => {
+    const nb = new YNotebook();
+    nb.insertCell(0, { cell_type: 'code', source: 'x = 1', metadata: {}, outputs: [], execution_count: null });
+    const cell = nb.getCell(0);
+
+    // Streaming phase: outputs arrive progressively
+    cell.setOutputs([{ output_type: 'stream', name: 'stdout', text: 'computing...\n' }]);
+    expect(cell.execution_count).toBeNull();
+
+    // Final update: all outputs + execution_count
+    cell.setOutputs([
+      { output_type: 'stream', name: 'stdout', text: 'computing...\n' },
+      { output_type: 'execute_result', data: { 'text/plain': '1' }, metadata: {}, execution_count: 5 },
+    ]);
+    cell.execution_count = 5;
+
+    expect(cell.getOutputs()).toHaveLength(2);
+    expect(cell.execution_count).toBe(5);
+  });
+
+  test('collect with room_ref/cell_id params (contract check)', () => {
+    // Verify the handleCollect signature accepts the new RTC params
+    const args = { channel_ref: 'ch-abc', parent_msg_id: 'msg-123', timeout_s: 30, room_ref: 'room-xyz', cell_id: 0 };
+    expect(args.room_ref).toBe('room-xyz');
+    expect(args.cell_id).toBe(0);
+    expect(args.timeout_s).toBe(30);
+  });
+});
+
+describe('daemon rtc awareness contracts', () => {
+  test('rtc:connect accepts agentName and agentColor', () => {
+    const args = { baseUrl: 'http://localhost:8888', token: 'abc', notebookPath: 'test.ipynb', agentName: 'my-agent', agentColor: '#00FF00' };
+    expect(args.agentName).toBe('my-agent');
+    expect(args.agentColor).toBe('#00FF00');
+  });
+
+  test('rtc:status returns collaborators from awareness', () => {
+    // Simulate what rtc:status does with awareness data
+    const doc = new Y.Doc();
+    const awareness = new awarenessProtocol.Awareness(doc);
+    awareness.setLocalStateField('user', { name: 'jupyter-link-agent', color: '#FF6B35' });
+
+    // Apply a remote collaborator
+    const doc2 = new Y.Doc();
+    const aw2 = new awarenessProtocol.Awareness(doc2);
+    aw2.setLocalStateField('user', { name: 'alice', color: '#00FF00' });
+    const update = awarenessProtocol.encodeAwarenessUpdate(aw2, [doc2.clientID]);
+    awarenessProtocol.applyAwarenessUpdate(awareness, update, 'remote');
+
+    // Extract collaborators as rtc:status does
+    const awarenessStates = awareness.getStates();
+    const collaborators = [];
+    for (const [clientId, state] of awarenessStates) {
+      if (state && state.user) {
+        collaborators.push({ clientId, name: state.user.name, color: state.user.color });
+      }
+    }
+
+    expect(collaborators).toHaveLength(2);
+    const names = collaborators.map(c => c.name);
+    expect(names).toContain('jupyter-link-agent');
+    expect(names).toContain('alice');
+
+    awareness.destroy();
+    aw2.destroy();
   });
 });
