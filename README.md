@@ -45,7 +45,7 @@ When the Jupyter server has the [`jupyter-collaboration`](https://github.com/jup
    ```
 2. Pass `"rtc": true` (or `"rtc": "auto"`) when opening kernel channels:
    ```bash
-   echo '{"path":"notebook.ipynb","rtc":true}' | npx jupyter-link@0.2.4 open:kernel-channels
+   echo '{"path":"notebook.ipynb","rtc":true}' | npx jupyter-link@0.2.5 open:kernel-channels
    ```
    This returns a `room_ref` alongside the usual `channel_ref`.
 3. Pass `room_ref` to subsequent commands (`run:cell`, `cell:insert`, `cell:update`, `cell:read`, `close:channels`) to use the RTC path.

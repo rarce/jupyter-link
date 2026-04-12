@@ -39,9 +39,9 @@ const DEFAULT_AGENT_COLOR = '#FF6B35';
  * @param {string} [opts.agentColor='#FF6B35'] - CSS color for awareness cursor
  * @returns {Promise<RoomHandle>}
  */
-export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000, agentName, agentColor }) {
+export function connectRoom({ baseUrl, token, roomId, sessionId, syncTimeoutMs = 15000, agentName, agentColor }) {
   return new Promise((resolve, reject) => {
-    const wsUrl = roomWsUrl(baseUrl, token, roomId);
+    const wsUrl = roomWsUrl(baseUrl, token, roomId, sessionId);
 
     const ydoc = new Y.Doc();
     const notebook = new YNotebook();
@@ -70,6 +70,7 @@ export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000, age
 
     let synced = false;
     let syncTimer = null;
+    let heartbeatTimer = null;
     let dead = false;
 
     const handle = {
@@ -85,6 +86,7 @@ export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000, age
         dead = true;
         handle.dead = true;
         if (syncTimer) clearTimeout(syncTimer);
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
         awareness.setLocalState(null); // Remove our awareness state
         awareness.destroy();
         try { ws.close(); } catch {}
@@ -191,25 +193,36 @@ export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000, age
       sendSyncStep1();
       // Announce our awareness (agent identity) to other collaborators
       sendAwarenessUpdate();
+      // Heartbeat: refresh awareness every 15s so JupyterLab keeps showing us online
+      // (y-protocols/awareness treats states older than 30s as stale).
+      heartbeatTimer = setInterval(() => {
+        if (dead || ws.readyState !== 1) return;
+        // Re-broadcast our current awareness; touch the clock so remotes refresh their timers.
+        awareness.setLocalState(awareness.getLocalState());
+        sendAwarenessUpdate();
+      }, 15000);
     });
 
     ws.addEventListener('message', onMessage);
 
-    ws.addEventListener('close', () => {
+    ws.addEventListener('close', (ev) => {
       dead = true;
       handle.dead = true;
       handle.synced = false;
+      if (heartbeatTimer) clearInterval(heartbeatTimer);
       sharedDoc.off('update', onDocUpdate);
       awareness.off('change', onAwarenessChange);
       if (!synced) {
         if (syncTimer) clearTimeout(syncTimer);
-        reject(new Error('WebSocket closed before sync completed'));
+        const detail = ev && (ev.code || ev.reason) ? ` (code=${ev.code} reason=${ev.reason || ''})` : '';
+        reject(new Error(`WebSocket closed before sync completed${detail}`));
       }
     });
 
     ws.addEventListener('error', (err) => {
       dead = true;
       handle.dead = true;
+      if (heartbeatTimer) clearInterval(heartbeatTimer);
       sharedDoc.off('update', onDocUpdate);
       awareness.off('change', onAwarenessChange);
       if (!synced) {
@@ -237,4 +250,104 @@ export function connectRoom({ baseUrl, token, roomId, syncTimeoutMs = 15000, age
  */
 export function notebookToJSON(handle) {
   return handle.notebook.toJSON();
+}
+
+/**
+ * Connect to the JupyterLab:globalAwareness room so the agent appears in the
+ * "Online Collaborators" panel. Only broadcasts awareness — no Y.Doc sync.
+ *
+ * Returns a handle with { awareness, destroy }. Keep the daemon alive to stay
+ * visible; destroy() cleanly removes the state.
+ */
+export function connectGlobalAwareness({ baseUrl, token, agentName, agentColor }) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(baseUrl);
+    const wsScheme = u.protocol === 'https:' ? 'wss:' : 'ws:';
+    const params = new URLSearchParams();
+    if (token) params.set('token', token);
+    const wsUrl = `${wsScheme}//${u.host}${u.pathname.replace(/\/$/, '')}/api/collaboration/room/JupyterLab:globalAwareness?${params.toString()}`;
+
+    const WS = globalThis.WebSocket;
+    if (!WS) { reject(new Error('WebSocket API not available')); return; }
+
+    const doc = new Y.Doc();
+    const awareness = new awarenessProtocol.Awareness(doc);
+    const displayName = agentName || DEFAULT_AGENT_NAME;
+    const displayColor = agentColor || DEFAULT_AGENT_COLOR;
+    const initials = displayName.split(/\s+/).map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'JL';
+    awareness.setLocalStateField('user', {
+      username: displayName,
+      name: displayName,
+      display_name: displayName,
+      initials,
+      color: displayColor,
+      anonymous: false,
+    });
+
+    const ws = new WS(wsUrl);
+    ws.binaryType = 'arraybuffer';
+    let dead = false;
+    let heartbeat = null;
+    let resolved = false;
+
+    function sendAwareness() {
+      if (ws.readyState !== 1) return;
+      const enc = encoding.createEncoder();
+      encoding.writeVarUint(enc, MSG_AWARENESS);
+      encoding.writeVarUint8Array(enc, awarenessProtocol.encodeAwarenessUpdate(awareness, [doc.clientID]));
+      ws.send(encoding.toUint8Array(enc));
+    }
+
+    function onAwarenessChange(_changes, origin) {
+      if (origin === 'remote' || dead || ws.readyState !== 1) return;
+      sendAwareness();
+    }
+    awareness.on('change', onAwarenessChange);
+
+    const handle = {
+      ws, awareness, doc,
+      get dead() { return dead; },
+      destroy() {
+        if (dead) return;
+        dead = true;
+        if (heartbeat) clearInterval(heartbeat);
+        try { awareness.setLocalState(null); } catch {}
+        try { awareness.destroy(); } catch {}
+        try { ws.close(); } catch {}
+      },
+    };
+
+    ws.addEventListener('open', () => {
+      sendAwareness();
+      heartbeat = setInterval(() => {
+        if (dead || ws.readyState !== 1) return;
+        awareness.setLocalState(awareness.getLocalState());
+        sendAwareness();
+      }, 15000);
+      if (!resolved) { resolved = true; resolve(handle); }
+    });
+
+    ws.addEventListener('message', (ev) => {
+      const buf = ev.data instanceof ArrayBuffer ? new Uint8Array(ev.data) : new Uint8Array(ev.data.buffer || ev.data);
+      if (buf.length === 0) return;
+      try {
+        const d = decoding.createDecoder(buf);
+        const t = decoding.readVarUint(d);
+        if (t === MSG_AWARENESS) {
+          const update = decoding.readVarUint8Array(d);
+          awarenessProtocol.applyAwarenessUpdate(awareness, update, 'remote');
+        }
+      } catch { /* ignore malformed */ }
+    });
+
+    ws.addEventListener('close', () => {
+      dead = true;
+      if (heartbeat) clearInterval(heartbeat);
+      awareness.off('change', onAwarenessChange);
+      if (!resolved) { resolved = true; reject(new Error('globalAwareness WS closed before open')); }
+    });
+    ws.addEventListener('error', (err) => {
+      if (!resolved) { resolved = true; reject(new Error(`globalAwareness WS error: ${err.message || 'unknown'}`)); }
+    });
+  });
 }

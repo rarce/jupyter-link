@@ -7,7 +7,7 @@ import { URL } from 'node:url';
 import { mapIopubToOutput, isStatusIdle, isParent, makeExecuteRequest } from './jupyter_proto.mjs';
 import { nowIso, newSessionId, getConfig } from '../src/lib/common.mjs';
 import { detectRTC, resolveRoom } from '../src/lib/rtcDetect.mjs';
-import { connectRoom, notebookToJSON } from '../src/lib/yjsClient.mjs';
+import { connectRoom, notebookToJSON, connectGlobalAwareness } from '../src/lib/yjsClient.mjs';
 import { VERSION } from '../src/lib/version.mjs';
 
 export function pidFilePath(port = getConfig().port) {
@@ -20,6 +20,17 @@ const PORT = getConfig().port;
 // State
 export const channels = new Map(); // ref -> { ws, sessionId, kernelId, url, outputsByParent }
 export const rooms = new Map();    // ref -> { handle (RoomHandle), roomId, path, baseUrl }
+let globalAwareness = null;        // singleton handle for JupyterLab:globalAwareness room
+
+async function ensureGlobalAwareness({ baseUrl, token, agentName, agentColor }) {
+  if (globalAwareness && !globalAwareness.dead) return globalAwareness;
+  try {
+    globalAwareness = await connectGlobalAwareness({ baseUrl, token, agentName, agentColor });
+  } catch {
+    globalAwareness = null; // non-fatal: stay usable without the panel presence
+  }
+  return globalAwareness;
+}
 
 export function wsUrlFor(baseUrl, token, kernelId, sessionId) {
   const url = new URL(baseUrl);
@@ -180,11 +191,14 @@ export async function handleRtcConnect({ baseUrl, token, notebookPath, syncTimeo
       return { room_ref: ref, room_id: roomId, file_id: fileId, path, already_connected: true };
     }
   }
-  // Connect via Yjs WebSocket
-  const handle = await connectRoom({ baseUrl, token, roomId, syncTimeoutMs, agentName, agentColor });
+  // Connect via Yjs WebSocket (sessionId is required by jupyter-collaboration to match the PUT session)
+  const handle = await connectRoom({ baseUrl, token, roomId, sessionId, syncTimeoutMs, agentName, agentColor });
   const ref = 'room-' + crypto.randomBytes(6).toString('hex');
   rooms.set(ref, { handle, roomId, path, baseUrl, fileId });
-  return { room_ref: ref, room_id: roomId, file_id: fileId, path, synced: handle.synced };
+  // Also join the global awareness room so the agent appears in JupyterLab's
+  // "Online Collaborators" panel. Non-fatal if it fails.
+  await ensureGlobalAwareness({ baseUrl, token, agentName, agentColor });
+  return { room_ref: ref, room_id: roomId, file_id: fileId, path, synced: handle.synced, global_awareness: !!(globalAwareness && !globalAwareness.dead) };
 }
 
 export function handleRtcDisconnect({ room_ref }) {

@@ -24,16 +24,18 @@ export async function detectRTC(baseUrl, token) {
     const t = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(url, { method: 'GET', headers, signal: controller.signal });
     clearTimeout(t);
-    // 200 or 404-with-body from the extension means it's installed.
-    // A plain 404 from the base server means it's not installed.
-    if (res.ok) {
-      return { available: true };
+    // The endpoint only accepts PUT. When the extension is installed:
+    //   - 405 Method Not Allowed (endpoint exists, wrong method)
+    //   - 200 in some versions
+    // When the extension is NOT installed: 404 (no such route).
+    if (res.ok || res.status === 405) return { available: true };
+    if (res.status === 404) {
+      // Heuristic fallback: some proxies return 404 from the extension with a body
+      // that mentions collaboration. Keep as available only if we can confirm it.
+      const txt = await res.text().catch(() => '');
+      return { available: txt.includes('collaboration') };
     }
-    // Some versions return 404 with a JSON body from the collab extension itself
-    // vs a plain HTML 404 from the base Jupyter server.
-    const txt = await res.text().catch(() => '');
-    const isCollabResponse = txt.includes('collaboration') || txt.includes('session');
-    return { available: isCollabResponse };
+    return { available: false };
   } catch {
     return { available: false };
   }
@@ -74,10 +76,11 @@ export async function resolveRoom(baseUrl, token, notebookPath) {
 /**
  * Build the collaboration WebSocket URL for a given room.
  */
-export function roomWsUrl(baseUrl, token, roomId) {
+export function roomWsUrl(baseUrl, token, roomId, sessionId) {
   const u = new URL(baseUrl);
   const wsScheme = u.protocol === 'https:' ? 'wss:' : 'ws:';
   const params = new URLSearchParams();
   if (token) params.set('token', token);
+  if (sessionId) params.set('sessionId', sessionId);
   return `${wsScheme}//${u.host}${u.pathname.replace(/\/$/, '')}/api/collaboration/room/${roomId}?${params.toString()}`;
 }

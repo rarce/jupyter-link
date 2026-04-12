@@ -84,27 +84,6 @@
         "env.mjs"
       ]
     },
-    "collect:outputs": {
-      "aliases": [],
-      "args": {},
-      "description": "Wait for outputs/reply/idle for a parent_msg_id on a channel",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "collect:outputs",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "collect",
-        "outputs.mjs"
-      ]
-    },
     "close:channels": {
       "aliases": [],
       "args": {},
@@ -126,14 +105,14 @@
         "channels.mjs"
       ]
     },
-    "execute:code": {
+    "collect:outputs": {
       "aliases": [],
       "args": {},
-      "description": "Send execute_request on an open channel and return parent_msg_id",
+      "description": "Wait for outputs/reply/idle for a parent_msg_id on a channel",
       "flags": {},
       "hasDynamicHelp": false,
       "hiddenAliases": [],
-      "id": "execute:code",
+      "id": "collect:outputs",
       "pluginAlias": "jupyter-link",
       "pluginName": "jupyter-link",
       "pluginType": "core",
@@ -143,29 +122,8 @@
       "relativePath": [
         "src",
         "commands",
-        "execute",
-        "code.mjs"
-      ]
-    },
-    "list:sessions": {
-      "aliases": [],
-      "args": {},
-      "description": "List sessions and optionally filter by path or name",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "list:sessions",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "list",
-        "sessions.mjs"
+        "collect",
+        "outputs.mjs"
       ]
     },
     "config:get": {
@@ -208,6 +166,27 @@
         "commands",
         "config",
         "set.mjs"
+      ]
+    },
+    "execute:code": {
+      "aliases": [],
+      "args": {},
+      "description": "Send execute_request on an open channel and return parent_msg_id",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "execute:code",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "execute",
+        "code.mjs"
       ]
     },
     "contents:create": {
@@ -273,6 +252,27 @@
         "write.mjs"
       ]
     },
+    "list:sessions": {
+      "aliases": [],
+      "args": {},
+      "description": "List sessions and optionally filter by path or name",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "list:sessions",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "list",
+        "sessions.mjs"
+      ]
+    },
     "open:kernel-channels": {
       "aliases": [],
       "args": {},
@@ -315,27 +315,6 @@
         "cell.mjs"
       ]
     },
-    "sessions:create": {
-      "aliases": [],
-      "args": {},
-      "description": "Create a Jupyter session (start a kernel) for a notebook",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "sessions:create",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "sessions",
-        "create.mjs"
-      ]
-    },
     "save:notebook": {
       "aliases": [],
       "args": {},
@@ -356,7 +335,28 @@
         "save",
         "notebook.mjs"
       ]
+    },
+    "sessions:create": {
+      "aliases": [],
+      "args": {},
+      "description": "Create a Jupyter session (start a kernel) for a notebook",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "sessions:create",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "sessions",
+        "create.mjs"
+      ]
     }
   },
-  "version": "0.2.4"
+  "version": "0.2.5"
 }
