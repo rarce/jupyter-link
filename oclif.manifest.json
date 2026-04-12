@@ -84,27 +84,6 @@
         "env.mjs"
       ]
     },
-    "collect:outputs": {
-      "aliases": [],
-      "args": {},
-      "description": "Wait for outputs/reply/idle for a parent_msg_id on a channel",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "collect:outputs",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "collect",
-        "outputs.mjs"
-      ]
-    },
     "close:channels": {
       "aliases": [],
       "args": {},
@@ -126,14 +105,14 @@
         "channels.mjs"
       ]
     },
-    "execute:code": {
+    "collect:outputs": {
       "aliases": [],
       "args": {},
-      "description": "Send execute_request on an open channel and return parent_msg_id",
+      "description": "Wait for outputs/reply/idle for a parent_msg_id on a channel",
       "flags": {},
       "hasDynamicHelp": false,
       "hiddenAliases": [],
-      "id": "execute:code",
+      "id": "collect:outputs",
       "pluginAlias": "jupyter-link",
       "pluginName": "jupyter-link",
       "pluginType": "core",
@@ -143,8 +122,8 @@
       "relativePath": [
         "src",
         "commands",
-        "execute",
-        "code.mjs"
+        "collect",
+        "outputs.mjs"
       ]
     },
     "list:sessions": {
@@ -166,6 +145,27 @@
         "commands",
         "list",
         "sessions.mjs"
+      ]
+    },
+    "execute:code": {
+      "aliases": [],
+      "args": {},
+      "description": "Send execute_request on an open channel and return parent_msg_id",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "execute:code",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "execute",
+        "code.mjs"
       ]
     },
     "contents:create": {

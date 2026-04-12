@@ -3,12 +3,15 @@ import crypto from 'node:crypto';
 import { URL } from 'node:url';
 import { mapIopubToOutput, isStatusIdle, isParent, makeExecuteRequest } from './jupyter_proto.mjs';
 import { nowIso, newSessionId, getConfig } from '../src/lib/common.mjs';
+import { detectRTC, resolveRoom } from '../src/lib/rtcDetect.mjs';
+import { connectRoom, notebookToJSON } from '../src/lib/yjsClient.mjs';
 
 const PORT = getConfig().port;
 // helper functions imported from jupyter_proto.mjs
 
 // State
 const channels = new Map(); // ref -> { ws, sessionId, kernelId, url, outputsByParent }
+const rooms = new Map();    // ref -> { handle (RoomHandle), roomId, path, baseUrl }
 
 export function wsUrlFor(baseUrl, token, kernelId, sessionId) {
   const url = new URL(baseUrl);
@@ -103,6 +106,53 @@ function handleList() {
   return { channels: arr };
 }
 
+// ---------- RTC operations ----------
+
+async function handleRtcDetect({ baseUrl, token }) {
+  if (!baseUrl) throw new Error('baseUrl is required');
+  return detectRTC(baseUrl, token);
+}
+
+async function handleRtcConnect({ baseUrl, token, notebookPath, syncTimeoutMs }) {
+  if (!baseUrl || !notebookPath) throw new Error('baseUrl and notebookPath are required');
+  // Resolve room ID from notebook path
+  const { sessionId, fileId, roomId, path } = await resolveRoom(baseUrl, token, notebookPath);
+  // Check if we already have a connection for this room
+  for (const [ref, st] of rooms.entries()) {
+    if (st.roomId === roomId && !st.handle.dead) {
+      return { room_ref: ref, room_id: roomId, file_id: fileId, path, already_connected: true };
+    }
+  }
+  // Connect via Yjs WebSocket
+  const handle = await connectRoom({ baseUrl, token, roomId, syncTimeoutMs });
+  const ref = 'room-' + crypto.randomBytes(6).toString('hex');
+  rooms.set(ref, { handle, roomId, path, baseUrl, fileId });
+  return { room_ref: ref, room_id: roomId, file_id: fileId, path, synced: handle.synced };
+}
+
+function handleRtcDisconnect({ room_ref }) {
+  const st = rooms.get(room_ref);
+  if (!st) return { ok: true };
+  st.handle.destroy();
+  rooms.delete(room_ref);
+  return { ok: true };
+}
+
+function handleRtcStatus({ room_ref }) {
+  if (room_ref) {
+    const st = rooms.get(room_ref);
+    if (!st) throw new Error('unknown room_ref');
+    const nb = notebookToJSON(st.handle);
+    return { room_ref, room_id: st.roomId, path: st.path, synced: st.handle.synced, dead: st.handle.dead, cells: nb.cells ? nb.cells.length : 0 };
+  }
+  // List all rooms
+  const arr = [];
+  for (const [ref, st] of rooms.entries()) {
+    arr.push({ room_ref: ref, room_id: st.roomId, path: st.path, synced: st.handle.synced, dead: st.handle.dead });
+  }
+  return { rooms: arr };
+}
+
 const server = net.createServer((socket) => {
   let buf = '';
   socket.on('data', (chunk) => {
@@ -120,6 +170,10 @@ const server = net.createServer((socket) => {
           case 'collect': res = handleCollect(req.args || {}); break;
           case 'close': res = handleClose(req.args || {}); break;
           case 'list': res = handleList(); break;
+          case 'rtc:detect': res = handleRtcDetect(req.args || {}); break;
+          case 'rtc:connect': res = handleRtcConnect(req.args || {}); break;
+          case 'rtc:disconnect': res = handleRtcDisconnect(req.args || {}); break;
+          case 'rtc:status': res = handleRtcStatus(req.args || {}); break;
           default: res = { error: 'unknown op' };
         }
         Promise.resolve(res).then((out) => socket.write(JSON.stringify(out) + '\n')).catch((e) => { try { socket.write(JSON.stringify({ error: e.message || String(e) }) + '\n'); } catch {} });
