@@ -290,7 +290,7 @@ export function handleRtcReadNotebook({ room_ref, cells: cellIndices, cell_id, r
   return { total_cells: cells.length, cells: result };
 }
 
-export function handleRtcInsertCell({ room_ref, index, position = 'end', source = '', metadata = {} }) {
+export function handleRtcInsertCell({ room_ref, index, position = 'end', source = '', metadata = {}, editable }) {
   const st = getRoomOrThrow(room_ref);
   const notebook = st.handle.notebook;
   const totalCells = notebook.cells.length;
@@ -303,10 +303,12 @@ export function handleRtcInsertCell({ room_ref, index, position = 'end', source 
   }
 
   const meta = { role: 'jupyter-driver', created_at: nowIso(), auto_save: false, ...metadata };
+  const cellMeta = { agent: meta };
+  if (editable !== undefined) cellMeta.editable = editable;
   notebook.insertCell(insertAt, {
     cell_type: 'code',
     source,
-    metadata: { agent: meta },
+    metadata: cellMeta,
     outputs: [],
     execution_count: null,
   });
@@ -314,7 +316,7 @@ export function handleRtcInsertCell({ room_ref, index, position = 'end', source 
   return { cell_id: insertAt, index: insertAt, total_cells: notebook.cells.length };
 }
 
-export function handleRtcUpdateCell({ room_ref, cell_id, index, source, outputs, execution_count, metadata }) {
+export function handleRtcUpdateCell({ room_ref, cell_id, index, source, outputs, execution_count, metadata, editable }) {
   const st = getRoomOrThrow(room_ref);
   const notebook = st.handle.notebook;
   let idx = cell_id ?? index;
@@ -344,10 +346,13 @@ export function handleRtcUpdateCell({ room_ref, cell_id, index, source, outputs,
   if (execution_count !== undefined) {
     cell.execution_count = execution_count;
   }
-  if (metadata !== undefined) {
-    // Merge agent metadata
+  if (metadata !== undefined || editable !== undefined) {
+    // Merge preserves top-level fields (like editable/deletable)
     const existing = cell.getMetadata() || {};
-    cell.setMetadata({ ...existing, agent: metadata });
+    const merged = { ...existing };
+    if (metadata !== undefined) merged.agent = metadata;
+    if (editable !== undefined) merged.editable = editable;
+    cell.setMetadata(merged);
   }
 
   return { ok: true, cell_id: idx };

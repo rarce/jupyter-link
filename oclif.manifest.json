@@ -105,27 +105,6 @@
         "channels.mjs"
       ]
     },
-    "collect:outputs": {
-      "aliases": [],
-      "args": {},
-      "description": "Wait for outputs/reply/idle for a parent_msg_id on a channel",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "collect:outputs",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "collect",
-        "outputs.mjs"
-      ]
-    },
     "config:get": {
       "aliases": [],
       "args": {},
@@ -168,6 +147,27 @@
         "set.mjs"
       ]
     },
+    "collect:outputs": {
+      "aliases": [],
+      "args": {},
+      "description": "Wait for outputs/reply/idle for a parent_msg_id on a channel",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "collect:outputs",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "collect",
+        "outputs.mjs"
+      ]
+    },
     "execute:code": {
       "aliases": [],
       "args": {},
@@ -187,90 +187,6 @@
         "commands",
         "execute",
         "code.mjs"
-      ]
-    },
-    "contents:create": {
-      "aliases": [],
-      "args": {},
-      "description": "Create a new empty notebook with proper nbformat v4 boilerplate",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "contents:create",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "contents",
-        "create.mjs"
-      ]
-    },
-    "contents:read": {
-      "aliases": [],
-      "args": {},
-      "description": "Read a notebook JSON via Contents API",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "contents:read",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "contents",
-        "read.mjs"
-      ]
-    },
-    "contents:write": {
-      "aliases": [],
-      "args": {},
-      "description": "Write notebook JSON via Contents API",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "contents:write",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "contents",
-        "write.mjs"
-      ]
-    },
-    "list:sessions": {
-      "aliases": [],
-      "args": {},
-      "description": "List sessions and optionally filter by path or name",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "list:sessions",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "list",
-        "sessions.mjs"
       ]
     },
     "open:kernel-channels": {
@@ -356,7 +272,91 @@
         "sessions",
         "create.mjs"
       ]
+    },
+    "contents:create": {
+      "aliases": [],
+      "args": {},
+      "description": "Create a new empty notebook with proper nbformat v4 boilerplate",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "contents:create",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "contents",
+        "create.mjs"
+      ]
+    },
+    "contents:read": {
+      "aliases": [],
+      "args": {},
+      "description": "Read a notebook JSON via Contents API",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "contents:read",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "contents",
+        "read.mjs"
+      ]
+    },
+    "contents:write": {
+      "aliases": [],
+      "args": {},
+      "description": "Write notebook JSON via Contents API",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "contents:write",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "contents",
+        "write.mjs"
+      ]
+    },
+    "list:sessions": {
+      "aliases": [],
+      "args": {},
+      "description": "List sessions and optionally filter by path or name",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "list:sessions",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "list",
+        "sessions.mjs"
+      ]
     }
   },
-  "version": "0.2.5"
+  "version": "0.2.6"
 }

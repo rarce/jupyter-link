@@ -25,13 +25,15 @@ export default class RunCell extends Command {
     // --- Step 1: Insert cell ---
     let cellId;
     if (roomRef) {
-      // RTC path: insert via Y.Doc
+      // RTC path: insert via Y.Doc — lock the cell while we execute so collaborators
+      // see a read-only indicator and cannot race our edits.
       const insertOut = await request('rtc:insert-cell', {
         room_ref: roomRef,
         index,
         position,
         source: code,
         metadata: agentMeta,
+        editable: false,
       });
       if (insertOut.error) throw new Error(insertOut.error);
       cellId = insertOut.cell_id;
@@ -71,12 +73,13 @@ export default class RunCell extends Command {
 
     // --- Step 4: Update cell with outputs ---
     if (roomRef) {
-      // RTC path: update via Y.Doc
+      // RTC path: update via Y.Doc, unlocking the cell now that execution finished.
       const updateOut = await request('rtc:update-cell', {
         room_ref: roomRef,
         cell_id: cellId,
         outputs,
         execution_count: executionCount,
+        editable: true,
       });
       if (updateOut.error) throw new Error(updateOut.error);
     } else {
