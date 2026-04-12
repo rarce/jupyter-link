@@ -31,14 +31,17 @@ export default class OpenKernelChannels extends Command {
 
     const result = { ...out };
 
-    // Optionally connect RTC room if requested (rtc: true or rtc: "auto")
-    const rtcMode = input.rtc;
-    if (rtcMode && nbPath) {
+    // RTC is auto-preferred: if the server has jupyter-collaboration, use it.
+    // Modes: undefined|'auto' = try, degrade silently; true = strict (throw on failure);
+    //        false = opt-out (REST only).
+    const rtcMode = input.rtc === undefined ? 'auto' : input.rtc;
+    const strict = rtcMode === true;
+    if (rtcMode !== false && nbPath) {
       try {
         const rtcOut = await request('rtc:connect', { baseUrl, token, notebookPath: nbPath });
         if (rtcOut.error) {
-          // If rtc is "auto", swallow error; if explicit, throw
-          if (rtcMode !== 'auto') throw new Error(rtcOut.error);
+          if (strict) throw new Error(rtcOut.error);
+          result.rtc_connected = false;
           result.rtc_error = rtcOut.error;
         } else {
           result.room_ref = rtcOut.room_ref;
@@ -46,7 +49,8 @@ export default class OpenKernelChannels extends Command {
           result.rtc_connected = true;
         }
       } catch (e) {
-        if (rtcMode !== 'auto') throw e;
+        if (strict) throw e;
+        result.rtc_connected = false;
         result.rtc_error = e.message;
       }
     }

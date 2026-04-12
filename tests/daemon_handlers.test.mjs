@@ -269,6 +269,11 @@ describe('dispatch', () => {
     expect(d.dispatch({ op: 'ping' })).toEqual({ ok: true });
   });
 
+  test('version returns package version', () => {
+    const res = d.dispatch({ op: 'version' });
+    expect(res.version).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
   test('routes to handleList', () => {
     expect(d.dispatch({ op: 'list' })).toEqual({ channels: [] });
   });

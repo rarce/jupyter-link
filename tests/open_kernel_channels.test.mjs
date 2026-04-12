@@ -36,7 +36,7 @@ describe('open:kernel-channels – auto-create session', () => {
       kernel: { id: 'kern-new', name: 'python3' },
     };
 
-    mockReadStdinJson.mockResolvedValue({ path: 'fresh.ipynb' });
+    mockReadStdinJson.mockResolvedValue({ path: 'fresh.ipynb', rtc: false });
     mockHttpJson
       .mockResolvedValueOnce([])           // GET /api/sessions — empty
       .mockResolvedValueOnce(newSession);   // POST /api/sessions — create
@@ -64,7 +64,7 @@ describe('open:kernel-channels – auto-create session', () => {
       kernel: { id: 'kern-julia', name: 'julia-1.9' },
     };
 
-    mockReadStdinJson.mockResolvedValue({ path: 'julia.ipynb', kernel_name: 'julia-1.9' });
+    mockReadStdinJson.mockResolvedValue({ path: 'julia.ipynb', kernel_name: 'julia-1.9', rtc: false });
     mockHttpJson
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce(newSession);
@@ -85,7 +85,7 @@ describe('open:kernel-channels – auto-create session', () => {
       kernel: { id: 'kern-existing', name: 'python3' },
     };
 
-    mockReadStdinJson.mockResolvedValue({ path: 'demo.ipynb' });
+    mockReadStdinJson.mockResolvedValue({ path: 'demo.ipynb', rtc: false });
     mockHttpJson.mockResolvedValueOnce([existingSession]); // GET returns existing session
     mockRequest.mockResolvedValueOnce({ channel_ref: 'ch-e', session_id: 'sid-e' });
 
@@ -107,5 +107,55 @@ describe('open:kernel-channels – auto-create session', () => {
     // Should NOT have called httpJson at all (no session lookup)
     expect(mockHttpJson).not.toHaveBeenCalled();
     expect(mockRequest).toHaveBeenCalledWith('open', expect.objectContaining({ kernelId: 'direct-kern' }));
+  });
+});
+
+describe('open:kernel-channels – RTC auto-preferred', () => {
+  beforeEach(() => { vi.clearAllMocks(); mockEnsureDaemon.mockResolvedValue(); });
+
+  test('auto-connects RTC when path is given and plugin is available', async () => {
+    mockReadStdinJson.mockResolvedValue({ path: 'nb.ipynb' }); // rtc undefined → auto
+    mockHttpJson.mockResolvedValueOnce([{ notebook: { path: 'nb.ipynb' }, kernel: { id: 'k' } }]);
+    mockRequest
+      .mockResolvedValueOnce({ channel_ref: 'ch', session_id: 's' })
+      .mockResolvedValueOnce({ room_ref: 'room-1', room_id: 'json:notebook:x' });
+
+    await new OpenKernelChannels([], {}).run();
+
+    expect(mockRequest).toHaveBeenNthCalledWith(2, 'rtc:connect', expect.objectContaining({ notebookPath: 'nb.ipynb' }));
+    expect(mockOk).toHaveBeenCalledWith(expect.objectContaining({ room_ref: 'room-1', rtc_connected: true }));
+  });
+
+  test('auto degrades to REST if rtc:connect fails', async () => {
+    mockReadStdinJson.mockResolvedValue({ path: 'nb.ipynb' });
+    mockHttpJson.mockResolvedValueOnce([{ notebook: { path: 'nb.ipynb' }, kernel: { id: 'k' } }]);
+    mockRequest
+      .mockResolvedValueOnce({ channel_ref: 'ch' })
+      .mockResolvedValueOnce({ error: 'no plugin' });
+
+    await new OpenKernelChannels([], {}).run();
+
+    expect(mockOk).toHaveBeenCalledWith(expect.objectContaining({ rtc_connected: false, rtc_error: 'no plugin' }));
+  });
+
+  test('rtc:false skips rtc:connect entirely', async () => {
+    mockReadStdinJson.mockResolvedValue({ path: 'nb.ipynb', rtc: false });
+    mockHttpJson.mockResolvedValueOnce([{ notebook: { path: 'nb.ipynb' }, kernel: { id: 'k' } }]);
+    mockRequest.mockResolvedValueOnce({ channel_ref: 'ch' });
+
+    await new OpenKernelChannels([], {}).run();
+
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+    expect(mockRequest).not.toHaveBeenCalledWith('rtc:connect', expect.anything());
+  });
+
+  test('rtc:true throws on connect failure', async () => {
+    mockReadStdinJson.mockResolvedValue({ path: 'nb.ipynb', rtc: true });
+    mockHttpJson.mockResolvedValueOnce([{ notebook: { path: 'nb.ipynb' }, kernel: { id: 'k' } }]);
+    mockRequest
+      .mockResolvedValueOnce({ channel_ref: 'ch' })
+      .mockResolvedValueOnce({ error: 'boom' });
+
+    await expect(new OpenKernelChannels([], {}).run()).rejects.toThrow('boom');
   });
 });

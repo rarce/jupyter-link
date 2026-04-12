@@ -105,132 +105,6 @@
         "outputs.mjs"
       ]
     },
-    "execute:code": {
-      "aliases": [],
-      "args": {},
-      "description": "Send execute_request on an open channel and return parent_msg_id",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "execute:code",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "execute",
-        "code.mjs"
-      ]
-    },
-    "list:sessions": {
-      "aliases": [],
-      "args": {},
-      "description": "List sessions and optionally filter by path or name",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "list:sessions",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "list",
-        "sessions.mjs"
-      ]
-    },
-    "open:kernel-channels": {
-      "aliases": [],
-      "args": {},
-      "description": "Open persistent kernel WS channels and optionally connect an RTC room",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "open:kernel-channels",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "open",
-        "kernel-channels.mjs"
-      ]
-    },
-    "run:cell": {
-      "aliases": [],
-      "args": {},
-      "description": "Insert a cell, execute it, collect outputs, and update the cell in one step",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "run:cell",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "run",
-        "cell.mjs"
-      ]
-    },
-    "save:notebook": {
-      "aliases": [],
-      "args": {},
-      "description": "Save notebook (round-trip PUT, or no-op when using RTC)",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "save:notebook",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "save",
-        "notebook.mjs"
-      ]
-    },
-    "sessions:create": {
-      "aliases": [],
-      "args": {},
-      "description": "Create a Jupyter session (start a kernel) for a notebook",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "sessions:create",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "sessions",
-        "create.mjs"
-      ]
-    },
     "close:channels": {
       "aliases": [],
       "args": {},
@@ -315,6 +189,111 @@
         "write.mjs"
       ]
     },
+    "execute:code": {
+      "aliases": [],
+      "args": {},
+      "description": "Send execute_request on an open channel and return parent_msg_id",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "execute:code",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "execute",
+        "code.mjs"
+      ]
+    },
+    "list:sessions": {
+      "aliases": [],
+      "args": {},
+      "description": "List sessions and optionally filter by path or name",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "list:sessions",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "list",
+        "sessions.mjs"
+      ]
+    },
+    "run:cell": {
+      "aliases": [],
+      "args": {},
+      "description": "Insert a cell, execute it, collect outputs, and update the cell in one step",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "run:cell",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "run",
+        "cell.mjs"
+      ]
+    },
+    "open:kernel-channels": {
+      "aliases": [],
+      "args": {},
+      "description": "Open persistent kernel WS channels and optionally connect an RTC room",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "open:kernel-channels",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "open",
+        "kernel-channels.mjs"
+      ]
+    },
+    "save:notebook": {
+      "aliases": [],
+      "args": {},
+      "description": "Save notebook (round-trip PUT, or no-op when using RTC)",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "save:notebook",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "save",
+        "notebook.mjs"
+      ]
+    },
     "config:get": {
       "aliases": [],
       "args": {},
@@ -356,7 +335,28 @@
         "config",
         "set.mjs"
       ]
+    },
+    "sessions:create": {
+      "aliases": [],
+      "args": {},
+      "description": "Create a Jupyter session (start a kernel) for a notebook",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "sessions:create",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "sessions",
+        "create.mjs"
+      ]
     }
   },
-  "version": "0.2.2"
+  "version": "0.2.3"
 }

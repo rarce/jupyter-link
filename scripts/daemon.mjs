@@ -1,10 +1,18 @@
 import net from 'node:net';
 import crypto from 'node:crypto';
+import os from 'node:os';
+import { writeFileSync, unlinkSync } from 'node:fs';
+import { join } from 'node:path';
 import { URL } from 'node:url';
 import { mapIopubToOutput, isStatusIdle, isParent, makeExecuteRequest } from './jupyter_proto.mjs';
 import { nowIso, newSessionId, getConfig } from '../src/lib/common.mjs';
 import { detectRTC, resolveRoom } from '../src/lib/rtcDetect.mjs';
 import { connectRoom, notebookToJSON } from '../src/lib/yjsClient.mjs';
+import { VERSION } from '../src/lib/version.mjs';
+
+export function pidFilePath(port = getConfig().port) {
+  return join(os.tmpdir(), `jupyter-link-daemon-${port}.pid`);
+}
 
 const PORT = getConfig().port;
 // helper functions imported from jupyter_proto.mjs
@@ -328,6 +336,10 @@ export function handleRtcUpdateCell({ room_ref, cell_id, index, source, outputs,
 export function dispatch(req) {
   switch (req.op) {
     case 'ping': return { ok: true };
+    case 'version': return { version: VERSION };
+    case 'shutdown':
+      setImmediate(() => { try { server.close(); } catch {} try { unlinkSync(pidFilePath()); } catch {} process.exit(0); });
+      return { ok: true };
     case 'open': return handleOpen(req.args || {});
     case 'exec': return handleExec(req.args || {});
     case 'collect': return handleCollect(req.args || {});
@@ -363,5 +375,11 @@ export const server = net.createServer((socket) => {
 });
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  server.listen(PORT, '127.0.0.1');
+  server.listen(PORT, '127.0.0.1', () => {
+    try { writeFileSync(pidFilePath(PORT), String(process.pid)); } catch {}
+  });
+  const cleanup = () => { try { unlinkSync(pidFilePath(PORT)); } catch {} };
+  process.on('exit', cleanup);
+  process.on('SIGTERM', () => { cleanup(); process.exit(0); });
+  process.on('SIGINT', () => { cleanup(); process.exit(0); });
 }
