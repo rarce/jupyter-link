@@ -15,7 +15,13 @@ export default class OpenKernelChannels extends Command {
       const sessions = await httpJson('GET', `${baseUrl}/api/sessions`, token);
       let session = sessions.find(s => s.notebook && s.notebook.path === nbPath);
       if (!session) { const name = nbPath.split('/').pop(); session = sessions.find(s => s.notebook && s.notebook.path && s.notebook.path.endsWith('/' + name)); }
-      if (!session) throw new Error('No running session for target notebook');
+      if (!session) {
+        // Auto-create session if kernel_name is provided (or default to python3)
+        const kernelName = input.kernel_name ?? input.kernel ?? 'python3';
+        const name = nbPath.split('/').pop();
+        const body = { path: nbPath, name, type: 'notebook', kernel: { name: kernelName } };
+        session = await httpJson('POST', `${baseUrl}/api/sessions`, token, body);
+      }
       kernelId = session.kernel && session.kernel.id;
       if (!kernelId) throw new Error('Selected session has no kernel id');
     }

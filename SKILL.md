@@ -32,6 +32,23 @@ echo '{}' | npx jupyter-link@0.1.0 check:env
 ```
 Returns `{"ok":true|false, "sessions_ok":..., "contents_ok":...}`
 
+### Create a notebook
+```bash
+# Create an empty Python3 notebook (generates nbformat v4 boilerplate)
+echo '{"path":"notebooks/new.ipynb"}' | npx jupyter-link@0.1.0 contents:create
+
+# Create with a specific kernel
+echo '{"path":"notebooks/new.ipynb","kernel_name":"julia-1.9"}' | npx jupyter-link@0.1.0 contents:create
+```
+Returns `{"ok":true,"created":true|false,"path":"..."}`. If notebook already exists, returns `created:false` without overwriting.
+
+### Create a session (start a kernel)
+```bash
+echo '{"path":"notebooks/my.ipynb"}' | npx jupyter-link@0.1.0 sessions:create
+echo '{"path":"notebooks/my.ipynb","kernel_name":"python3"}' | npx jupyter-link@0.1.0 sessions:create
+```
+Returns the full Jupyter session object with `id`, `kernel.id`, `kernel.name`, etc. If a session already exists for the notebook, returns it without creating a duplicate.
+
 ### List sessions
 ```bash
 echo '{}' | npx jupyter-link@0.1.0 list:sessions
@@ -88,6 +105,15 @@ echo '{"path":"notebooks/my.ipynb"}' | npx jupyter-link@0.1.0 open:kernel-channe
 echo '{"kernel_id":"..."}' | npx jupyter-link@0.1.0 open:kernel-channels
 ```
 Returns `{"channel_ref":"ch-...","session_id":"..."}`. Auto-starts daemon if needed.
+**Auto-creates session**: If no running session exists for the notebook, automatically creates one (defaults to `python3` kernel, override with `kernel_name`).
+
+### Run cell (insert + execute + collect + update in one step)
+```bash
+echo '{"path":"notebooks/my.ipynb","channel_ref":"ch-...","code":"print(42)"}' | npx jupyter-link@0.1.0 run:cell
+echo '{"path":"notebooks/my.ipynb","channel_ref":"ch-...","code":"import time; time.sleep(5)","timeout_s":30}' | npx jupyter-link@0.1.0 run:cell
+```
+Returns `{"cell_id":N,"status":"ok"|"error","execution_count":N,"outputs":[...]}`.
+This is the **recommended** way to execute code — it handles the full pipeline: insert cell, execute on kernel, collect outputs, and update the cell with results.
 
 ### Execute code on a channel
 ```bash
@@ -114,15 +140,27 @@ echo '{"path":"notebooks/my.ipynb"}' | npx jupyter-link@0.1.0 save:notebook
 
 ## Typical workflow
 
+### Recommended (using `run:cell`)
 1. **Configure**: `echo '{"url":"...","token":"..."}' | npx jupyter-link@0.1.0 config:set`
 2. **Check env**: `echo '{}' | npx jupyter-link@0.1.0 check:env`
-3. **Open channel**: `echo '{"path":"..."}' | npx jupyter-link@0.1.0 open:kernel-channels` → get `channel_ref`
-4. **Insert cell**: `echo '{"path":"...","code":"..."}' | npx jupyter-link@0.1.0 cell:insert` → get `index`
-5. **Execute**: `echo '{"channel_ref":"...","code":"..."}' | npx jupyter-link@0.1.0 execute:code` → get `parent_msg_id`
-6. **Collect**: `echo '{"channel_ref":"...","parent_msg_id":"..."}' | npx jupyter-link@0.1.0 collect:outputs` → get outputs
-7. **Update cell**: `echo '{"path":"...","cell_id":N,"outputs":[...],"execution_count":N}' | npx jupyter-link@0.1.0 cell:update`
-8. **Save**: `echo '{"path":"..."}' | npx jupyter-link@0.1.0 save:notebook`
-9. **Close**: `echo '{"channel_ref":"..."}' | npx jupyter-link@0.1.0 close:channels`
+3. **Create notebook** (if needed): `echo '{"path":"..."}' | npx jupyter-link@0.1.0 contents:create`
+4. **Open channel**: `echo '{"path":"..."}' | npx jupyter-link@0.1.0 open:kernel-channels` → get `channel_ref` (auto-creates session if needed)
+5. **Run cell** (repeat): `echo '{"path":"...","channel_ref":"...","code":"..."}' | npx jupyter-link@0.1.0 run:cell` → get `cell_id`, `status`, `outputs`
+6. **Save**: `echo '{"path":"..."}' | npx jupyter-link@0.1.0 save:notebook`
+7. **Close**: `echo '{"channel_ref":"..."}' | npx jupyter-link@0.1.0 close:channels`
+
+### Granular (step-by-step control)
+1. **Configure**: `echo '{"url":"...","token":"..."}' | npx jupyter-link@0.1.0 config:set`
+2. **Check env**: `echo '{}' | npx jupyter-link@0.1.0 check:env`
+3. **Create notebook** (if needed): `echo '{"path":"..."}' | npx jupyter-link@0.1.0 contents:create`
+4. **Create session** (if needed): `echo '{"path":"..."}' | npx jupyter-link@0.1.0 sessions:create`
+5. **Open channel**: `echo '{"path":"..."}' | npx jupyter-link@0.1.0 open:kernel-channels` → get `channel_ref`
+6. **Insert cell**: `echo '{"path":"...","code":"..."}' | npx jupyter-link@0.1.0 cell:insert` → get `index`
+7. **Execute**: `echo '{"channel_ref":"...","code":"..."}' | npx jupyter-link@0.1.0 execute:code` → get `parent_msg_id`
+8. **Collect**: `echo '{"channel_ref":"...","parent_msg_id":"..."}' | npx jupyter-link@0.1.0 collect:outputs` → get outputs
+9. **Update cell**: `echo '{"path":"...","cell_id":N,"outputs":[...],"execution_count":N}' | npx jupyter-link@0.1.0 cell:update`
+10. **Save**: `echo '{"path":"..."}' | npx jupyter-link@0.1.0 save:notebook`
+11. **Close**: `echo '{"channel_ref":"..."}' | npx jupyter-link@0.1.0 close:channels`
 
 ## Notes
 
@@ -132,10 +170,11 @@ echo '{"path":"notebooks/my.ipynb"}' | npx jupyter-link@0.1.0 save:notebook
 
 ## Canonical parameter names
 
-| Primary        | Fallback     | Used in                    |
-|----------------|--------------|----------------------------|
-| `path`         | `notebook`   | All notebook commands      |
-| `code`         | `source`     | insert, update, execute    |
-| `channel_ref`  | `ref`        | execute, collect, close    |
-| `parent_msg_id`| `parent_id`  | collect                    |
-| `nb_json`      | `content`    | write                      |
+| Primary        | Fallback     | Used in                             |
+|----------------|--------------|-------------------------------------|
+| `path`         | `notebook`   | All notebook commands               |
+| `code`         | `source`     | insert, update, execute, run:cell   |
+| `channel_ref`  | `ref`        | execute, collect, close, run:cell   |
+| `parent_msg_id`| `parent_id`  | collect                             |
+| `nb_json`      | `content`    | write                               |
+| `kernel_name`  | `kernel`     | sessions:create, contents:create, open:kernel-channels |
