@@ -1,6 +1,6 @@
 {
   "name": "jupyter-link",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CLI and AgentSkill to execute code in Jupyter kernels and persist outputs to notebooks",
   "type": "module",
   "license": "MIT",
@@ -27,7 +27,9 @@
     "bin",
     "src",
     "scripts",
-    "oclif.manifest.json"
+    "oclif.manifest.json",
+    "skills.json",
+    "SKILL.md"
   ],
   "dependencies": {
     "@oclif/core": "^3.26.3"
