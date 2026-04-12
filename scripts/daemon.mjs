@@ -153,6 +153,127 @@ function handleRtcStatus({ room_ref }) {
   return { rooms: arr };
 }
 
+// ---------- RTC cell operations ----------
+
+function getRoomOrThrow(room_ref) {
+  const st = rooms.get(room_ref);
+  if (!st) throw new Error('unknown room_ref');
+  if (st.handle.dead) throw new Error('room connection is dead');
+  return st;
+}
+
+function handleRtcReadNotebook({ room_ref, cells: cellIndices, cell_id, range, max_chars = 3000 }) {
+  const st = getRoomOrThrow(room_ref);
+  const nb = notebookToJSON(st.handle);
+  const cells = nb.cells || [];
+
+  // Determine which cells to return (same logic as cell:read command)
+  let indices;
+  if (cellIndices !== undefined) {
+    indices = Array.isArray(cellIndices) ? cellIndices : [cellIndices];
+  } else if (cell_id !== undefined) {
+    indices = [cell_id];
+  } else if (range !== undefined) {
+    const [start, end] = range;
+    indices = [];
+    for (let i = start; i < Math.min(end, cells.length); i++) indices.push(i);
+  } else {
+    // Return summary of all cells
+    const summary = cells.map((c, i) => {
+      const src = Array.isArray(c.source) ? c.source.join('') : (c.source || '');
+      return {
+        index: i,
+        cell_type: c.cell_type,
+        source_preview: src.slice(0, 120),
+        execution_count: c.execution_count ?? null,
+        has_outputs: (c.outputs || []).length > 0,
+      };
+    });
+    return { total_cells: cells.length, cells: summary };
+  }
+
+  const result = [];
+  for (const i of indices) {
+    if (i < 0 || i >= cells.length) {
+      result.push({ index: i, error: `out of range (0..${cells.length - 1})` });
+    } else {
+      const c = cells[i];
+      const src = Array.isArray(c.source) ? c.source.join('') : (c.source || '');
+      const entry = { index: i, cell_type: c.cell_type, source: src.slice(0, max_chars) };
+      if (c.cell_type === 'code') {
+        entry.execution_count = c.execution_count ?? null;
+        entry.outputs = c.outputs || [];
+      }
+      if (c.metadata?.agent) entry.agent = c.metadata.agent;
+      result.push(entry);
+    }
+  }
+  return { total_cells: cells.length, cells: result };
+}
+
+function handleRtcInsertCell({ room_ref, index, position = 'end', source = '', metadata = {} }) {
+  const st = getRoomOrThrow(room_ref);
+  const notebook = st.handle.notebook;
+  const totalCells = notebook.cells.length;
+
+  let insertAt;
+  if (typeof index === 'number') {
+    insertAt = Math.max(0, Math.min(index, totalCells));
+  } else {
+    insertAt = position === 'start' ? 0 : totalCells;
+  }
+
+  const meta = { role: 'jupyter-driver', created_at: nowIso(), auto_save: false, ...metadata };
+  notebook.insertCell(insertAt, {
+    cell_type: 'code',
+    source,
+    metadata: { agent: meta },
+    outputs: [],
+    execution_count: null,
+  });
+
+  return { cell_id: insertAt, index: insertAt, total_cells: notebook.cells.length };
+}
+
+function handleRtcUpdateCell({ room_ref, cell_id, index, source, outputs, execution_count, metadata }) {
+  const st = getRoomOrThrow(room_ref);
+  const notebook = st.handle.notebook;
+  let idx = cell_id ?? index;
+
+  // If no index given, find the latest agent-managed cell
+  if (idx === undefined || idx === null) {
+    const nbJson = notebookToJSON(st.handle);
+    const cells = nbJson.cells || [];
+    for (let i = cells.length - 1; i >= 0; i--) {
+      const md = (cells[i].metadata && cells[i].metadata.agent) || {};
+      if (md.role === 'jupyter-driver') { idx = i; break; }
+    }
+    if (idx === undefined || idx === null) throw new Error('No agent-managed cell found to update');
+  }
+
+  const totalCells = notebook.cells.length;
+  if (idx < 0 || idx >= totalCells) throw new Error('cell index out of range');
+
+  const cell = notebook.getCell(idx);
+
+  if (source !== undefined) {
+    cell.setSource(source);
+  }
+  if (outputs !== undefined) {
+    cell.setOutputs(outputs);
+  }
+  if (execution_count !== undefined) {
+    cell.execution_count = execution_count;
+  }
+  if (metadata !== undefined) {
+    // Merge agent metadata
+    const existing = cell.getMetadata() || {};
+    cell.setMetadata({ ...existing, agent: metadata });
+  }
+
+  return { ok: true, cell_id: idx };
+}
+
 const server = net.createServer((socket) => {
   let buf = '';
   socket.on('data', (chunk) => {
@@ -174,6 +295,9 @@ const server = net.createServer((socket) => {
           case 'rtc:connect': res = handleRtcConnect(req.args || {}); break;
           case 'rtc:disconnect': res = handleRtcDisconnect(req.args || {}); break;
           case 'rtc:status': res = handleRtcStatus(req.args || {}); break;
+          case 'rtc:read-notebook': res = handleRtcReadNotebook(req.args || {}); break;
+          case 'rtc:insert-cell': res = handleRtcInsertCell(req.args || {}); break;
+          case 'rtc:update-cell': res = handleRtcUpdateCell(req.args || {}); break;
           default: res = { error: 'unknown op' };
         }
         Promise.resolve(res).then((out) => socket.write(JSON.stringify(out) + '\n')).catch((e) => { try { socket.write(JSON.stringify({ error: e.message || String(e) }) + '\n'); } catch {} });

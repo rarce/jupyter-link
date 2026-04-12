@@ -87,7 +87,7 @@
     "close:channels": {
       "aliases": [],
       "args": {},
-      "description": "Close a previously opened channel_ref",
+      "description": "Close a previously opened channel_ref (and optionally an RTC room_ref)",
       "flags": {},
       "hasDynamicHelp": false,
       "hiddenAliases": [],
@@ -124,48 +124,6 @@
         "commands",
         "collect",
         "outputs.mjs"
-      ]
-    },
-    "list:sessions": {
-      "aliases": [],
-      "args": {},
-      "description": "List sessions and optionally filter by path or name",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "list:sessions",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "list",
-        "sessions.mjs"
-      ]
-    },
-    "execute:code": {
-      "aliases": [],
-      "args": {},
-      "description": "Send execute_request on an open channel and return parent_msg_id",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "execute:code",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "execute",
-        "code.mjs"
       ]
     },
     "contents:create": {
@@ -273,10 +231,52 @@
         "set.mjs"
       ]
     },
+    "execute:code": {
+      "aliases": [],
+      "args": {},
+      "description": "Send execute_request on an open channel and return parent_msg_id",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "execute:code",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "execute",
+        "code.mjs"
+      ]
+    },
+    "list:sessions": {
+      "aliases": [],
+      "args": {},
+      "description": "List sessions and optionally filter by path or name",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "list:sessions",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "list",
+        "sessions.mjs"
+      ]
+    },
     "open:kernel-channels": {
       "aliases": [],
       "args": {},
-      "description": "Open persistent kernel WS channels and return a channel_ref",
+      "description": "Open persistent kernel WS channels and optionally connect an RTC room",
       "flags": {},
       "hasDynamicHelp": false,
       "hiddenAliases": [],
@@ -318,7 +318,7 @@
     "save:notebook": {
       "aliases": [],
       "args": {},
-      "description": "Save notebook (round-trip PUT)",
+      "description": "Save notebook (round-trip PUT, or no-op when using RTC)",
       "flags": {},
       "hasDynamicHelp": false,
       "hiddenAliases": [],

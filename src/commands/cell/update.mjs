@@ -1,5 +1,6 @@
 import { Command } from '@oclif/core';
 import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion } from '../../lib/common.mjs';
+import { ensureDaemon, request } from '../../lib/daemonClient.mjs';
 
 function findLatestAgentCellIndex(nb) {
   const cells = nb.cells || [];
@@ -17,7 +18,26 @@ export default class UpdateCell extends Command {
     const input = await readStdinJson();
     const path = input.path ?? input.notebook; let idx = input.cell_id ?? input.index;
     const source = input.code ?? input.source; const outputs = input.outputs; const execution_count = input.execution_count; const metadata = input.metadata;
-    if (!path) throw new Error('path is required');
+    const roomRef = input.room_ref;
+    if (!path && !roomRef) throw new Error('path is required');
+
+    // RTC path: use Y.Doc via daemon
+    if (roomRef) {
+      await ensureDaemon();
+      const out = await request('rtc:update-cell', {
+        room_ref: roomRef,
+        cell_id: idx,
+        source,
+        outputs,
+        execution_count,
+        metadata,
+      });
+      if (out.error) throw new Error(out.error);
+      ok(out);
+      return;
+    }
+
+    // REST path (original)
     const { baseUrl, token } = getConfig();
     const nb = await httpJson('GET', `${baseUrl}/api/contents/${encodeURIComponent(path)}?content=1`, token);
     if (nb.type !== 'notebook') throw new Error('Path is not a notebook');
@@ -28,4 +48,3 @@ export default class UpdateCell extends Command {
     ok({ ok: true });
   }
 }
-

@@ -3,14 +3,14 @@ import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion } from '../..
 import { ensureDaemon, request } from '../../lib/daemonClient.mjs';
 
 export default class OpenKernelChannels extends Command {
-  static description = 'Open persistent kernel WS channels and return a channel_ref';
+  static description = 'Open persistent kernel WS channels and optionally connect an RTC room';
   async run() {
     assertNodeVersion();
     const input = await readStdinJson();
     const { baseUrl, token } = getConfig();
     let kernelId = input.kernel_id;
+    const nbPath = input.path ?? input.notebook;
     if (!kernelId) {
-      const nbPath = input.path ?? input.notebook;
       if (!nbPath) throw new Error('kernel_id or notebook path required');
       const sessions = await httpJson('GET', `${baseUrl}/api/sessions`, token);
       let session = sessions.find(s => s.notebook && s.notebook.path === nbPath);
@@ -28,7 +28,29 @@ export default class OpenKernelChannels extends Command {
     await ensureDaemon();
     const out = await request('open', { baseUrl, token, kernelId });
     if (out.error) throw new Error(out.error);
-    ok(out);
+
+    const result = { ...out };
+
+    // Optionally connect RTC room if requested (rtc: true or rtc: "auto")
+    const rtcMode = input.rtc;
+    if (rtcMode && nbPath) {
+      try {
+        const rtcOut = await request('rtc:connect', { baseUrl, token, notebookPath: nbPath });
+        if (rtcOut.error) {
+          // If rtc is "auto", swallow error; if explicit, throw
+          if (rtcMode !== 'auto') throw new Error(rtcOut.error);
+          result.rtc_error = rtcOut.error;
+        } else {
+          result.room_ref = rtcOut.room_ref;
+          result.room_id = rtcOut.room_id;
+          result.rtc_connected = true;
+        }
+      } catch (e) {
+        if (rtcMode !== 'auto') throw e;
+        result.rtc_error = e.message;
+      }
+    }
+
+    ok(result);
   }
 }
-

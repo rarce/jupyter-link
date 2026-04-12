@@ -190,3 +190,89 @@ describe('run:cell', () => {
     expect(mockOk).toHaveBeenCalled();
   });
 });
+
+describe('run:cell RTC path', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockEnsureDaemon.mockResolvedValue();
+  });
+
+  test('uses daemon rtc ops when room_ref is provided', async () => {
+    const outputs = [{ output_type: 'stream', name: 'stdout', text: 'hi\n' }];
+
+    mockReadStdinJson.mockResolvedValue({
+      room_ref: 'room-abc',
+      channel_ref: 'ch-1',
+      code: 'print("hi")',
+      path: 'demo.ipynb',
+    });
+
+    mockRequest
+      .mockResolvedValueOnce({ cell_id: 3, index: 3, total_cells: 4 })    // rtc:insert-cell
+      .mockResolvedValueOnce({ parent_msg_id: 'msg-rtc' })                 // exec
+      .mockResolvedValueOnce({ outputs, execution_count: 5, status: 'ok' }) // collect
+      .mockResolvedValueOnce({ ok: true, cell_id: 3 });                    // rtc:update-cell
+
+    const cmd = new RunCell([], {});
+    await cmd.run();
+
+    // Should NOT have called httpJson at all (no REST)
+    expect(mockHttpJson).not.toHaveBeenCalled();
+
+    // Should have called daemon ops
+    expect(mockRequest).toHaveBeenCalledTimes(4);
+    expect(mockRequest).toHaveBeenNthCalledWith(1, 'rtc:insert-cell', expect.objectContaining({
+      room_ref: 'room-abc',
+      source: 'print("hi")',
+    }));
+    expect(mockRequest).toHaveBeenNthCalledWith(2, 'exec', expect.objectContaining({
+      channel_ref: 'ch-1',
+    }));
+    expect(mockRequest).toHaveBeenNthCalledWith(3, 'collect', expect.objectContaining({
+      parent_msg_id: 'msg-rtc',
+    }));
+    expect(mockRequest).toHaveBeenNthCalledWith(4, 'rtc:update-cell', expect.objectContaining({
+      room_ref: 'room-abc',
+      cell_id: 3,
+      outputs,
+      execution_count: 5,
+    }));
+
+    expect(mockOk).toHaveBeenCalledWith({
+      cell_id: 3, status: 'ok', execution_count: 5, outputs,
+    });
+  });
+
+  test('RTC path does not require path when room_ref is given', async () => {
+    mockReadStdinJson.mockResolvedValue({
+      room_ref: 'room-xyz',
+      channel_ref: 'ch-2',
+      code: 'x=1',
+    });
+
+    mockRequest
+      .mockResolvedValueOnce({ cell_id: 0, index: 0, total_cells: 1 })
+      .mockResolvedValueOnce({ parent_msg_id: 'msg-1' })
+      .mockResolvedValueOnce({ outputs: [], execution_count: 1, status: 'ok' })
+      .mockResolvedValueOnce({ ok: true, cell_id: 0 });
+
+    const cmd = new RunCell([], {});
+    await cmd.run();
+
+    expect(mockHttpJson).not.toHaveBeenCalled();
+    expect(mockOk).toHaveBeenCalledWith(expect.objectContaining({ cell_id: 0, status: 'ok' }));
+  });
+
+  test('RTC path propagates insert error', async () => {
+    mockReadStdinJson.mockResolvedValue({
+      room_ref: 'room-bad',
+      channel_ref: 'ch-3',
+      code: 'x=1',
+    });
+
+    mockRequest.mockResolvedValueOnce({ error: 'room connection is dead' });
+
+    const cmd = new RunCell([], {});
+    await expect(cmd.run()).rejects.toThrow('room connection is dead');
+  });
+});

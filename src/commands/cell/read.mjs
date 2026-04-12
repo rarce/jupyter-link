@@ -1,5 +1,6 @@
 import { Command } from '@oclif/core';
 import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion } from '../../lib/common.mjs';
+import { ensureDaemon, request } from '../../lib/daemonClient.mjs';
 
 export function summarizeOutput(out, maxChars) {
   const type = out.output_type;
@@ -52,12 +53,30 @@ export default class ReadCell extends Command {
     assertNodeVersion();
     const input = await readStdinJson();
     const path = input.path ?? input.notebook;
-    if (!path) throw new Error('path is required');
+    const roomRef = input.room_ref;
+    if (!path && !roomRef) throw new Error('path is required');
+    const maxChars = input.max_chars ?? 3000;
+
+    // RTC path: read from Y.Doc via daemon
+    if (roomRef) {
+      await ensureDaemon();
+      const out = await request('rtc:read-notebook', {
+        room_ref: roomRef,
+        cells: input.cells,
+        cell_id: input.cell_id,
+        range: input.range,
+        max_chars: maxChars,
+      });
+      if (out.error) throw new Error(out.error);
+      ok(out);
+      return;
+    }
+
+    // REST path (original)
     const { baseUrl, token } = getConfig();
     const nb = await httpJson('GET', `${baseUrl}/api/contents/${encodeURIComponent(path)}?content=1`, token);
     if (nb.type !== 'notebook') throw new Error('Path is not a notebook');
     const cells = nb.content.cells || [];
-    const maxChars = input.max_chars ?? 3000;
 
     // Determine which cells to return
     let indices;

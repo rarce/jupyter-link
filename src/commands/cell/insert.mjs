@@ -1,5 +1,6 @@
 import { Command } from '@oclif/core';
 import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion, nowIso } from '../../lib/common.mjs';
+import { ensureDaemon, request } from '../../lib/daemonClient.mjs';
 
 export default class InsertCell extends Command {
   static description = 'Insert a code cell with agent metadata';
@@ -11,7 +12,25 @@ export default class InsertCell extends Command {
     const position = input.position || 'end';
     const source = input.code ?? input.source ?? '';
     const agentMeta = input.metadata || {};
-    if (!path) throw new Error('path is required');
+    const roomRef = input.room_ref;
+    if (!path && !roomRef) throw new Error('path is required');
+
+    // RTC path: use Y.Doc via daemon
+    if (roomRef) {
+      await ensureDaemon();
+      const out = await request('rtc:insert-cell', {
+        room_ref: roomRef,
+        index,
+        position,
+        source,
+        metadata: agentMeta,
+      });
+      if (out.error) throw new Error(out.error);
+      ok(out);
+      return;
+    }
+
+    // REST path (original)
     const { baseUrl, token } = getConfig();
     const nb = await httpJson('GET', `${baseUrl}/api/contents/${encodeURIComponent(path)}?content=1`, token);
     if (nb.type !== 'notebook') throw new Error('Path is not a notebook');
@@ -24,4 +43,3 @@ export default class InsertCell extends Command {
     ok({ cell_id: insertAt, index: insertAt });
   }
 }
-
