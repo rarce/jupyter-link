@@ -10,8 +10,8 @@ const PORT = getConfig().port;
 // helper functions imported from jupyter_proto.mjs
 
 // State
-const channels = new Map(); // ref -> { ws, sessionId, kernelId, url, outputsByParent }
-const rooms = new Map();    // ref -> { handle (RoomHandle), roomId, path, baseUrl }
+export const channels = new Map(); // ref -> { ws, sessionId, kernelId, url, outputsByParent }
+export const rooms = new Map();    // ref -> { handle (RoomHandle), roomId, path, baseUrl }
 
 export function wsUrlFor(baseUrl, token, kernelId, sessionId) {
   const url = new URL(baseUrl);
@@ -23,7 +23,7 @@ export function wsUrlFor(baseUrl, token, kernelId, sessionId) {
   return u;
 }
 
-function handleOpen({ baseUrl, token, kernelId }) {
+export function handleOpen({ baseUrl, token, kernelId }) {
   if (!baseUrl || !kernelId) throw new Error('baseUrl and kernelId are required');
   const sessionId = newSessionId();
   const url = wsUrlFor(baseUrl, token, kernelId, sessionId);
@@ -62,7 +62,7 @@ function handleOpen({ baseUrl, token, kernelId }) {
   return { channel_ref: ref, session_id: sessionId };
 }
 
-function handleExec({ channel_ref, code, allow_stdin = false, stop_on_error = true }) {
+export function handleExec({ channel_ref, code, allow_stdin = false, stop_on_error = true }) {
   const ch = channels.get(channel_ref);
   if (!ch) throw new Error('unknown channel_ref');
   if (ch.dead) throw new Error('channel is closed or errored');
@@ -74,7 +74,7 @@ function handleExec({ channel_ref, code, allow_stdin = false, stop_on_error = tr
   return { parent_msg_id: parentId };
 }
 
-async function handleCollect({ channel_ref, parent_msg_id, timeout_s = 60, room_ref, cell_id }) {
+export async function handleCollect({ channel_ref, parent_msg_id, timeout_s = 60, room_ref, cell_id }) {
   const ch = channels.get(channel_ref);
   if (!ch) throw new Error('unknown channel_ref');
   const agg = ch.outputsByParent.get(parent_msg_id);
@@ -135,7 +135,7 @@ async function handleCollect({ channel_ref, parent_msg_id, timeout_s = 60, room_
   return { outputs: agg.outputs, execution_count: agg.execution_count, status };
 }
 
-function handleClose({ channel_ref }) {
+export function handleClose({ channel_ref }) {
   const ch = channels.get(channel_ref);
   if (!ch) return { ok: true };
   try { ch.ws.close(); } catch {}
@@ -143,7 +143,7 @@ function handleClose({ channel_ref }) {
   return { ok: true };
 }
 
-function handleList() {
+export function handleList() {
   const arr = [];
   for (const [ref, st] of channels.entries()) arr.push({ channel_ref: ref, kernel_id: st.kernelId, url: st.url, ready: st.ready });
   return { channels: arr };
@@ -151,12 +151,12 @@ function handleList() {
 
 // ---------- RTC operations ----------
 
-async function handleRtcDetect({ baseUrl, token }) {
+export async function handleRtcDetect({ baseUrl, token }) {
   if (!baseUrl) throw new Error('baseUrl is required');
   return detectRTC(baseUrl, token);
 }
 
-async function handleRtcConnect({ baseUrl, token, notebookPath, syncTimeoutMs, agentName, agentColor }) {
+export async function handleRtcConnect({ baseUrl, token, notebookPath, syncTimeoutMs, agentName, agentColor }) {
   if (!baseUrl || !notebookPath) throw new Error('baseUrl and notebookPath are required');
   // Resolve room ID from notebook path
   const { sessionId, fileId, roomId, path } = await resolveRoom(baseUrl, token, notebookPath);
@@ -173,7 +173,7 @@ async function handleRtcConnect({ baseUrl, token, notebookPath, syncTimeoutMs, a
   return { room_ref: ref, room_id: roomId, file_id: fileId, path, synced: handle.synced };
 }
 
-function handleRtcDisconnect({ room_ref }) {
+export function handleRtcDisconnect({ room_ref }) {
   const st = rooms.get(room_ref);
   if (!st) return { ok: true };
   st.handle.destroy();
@@ -181,7 +181,7 @@ function handleRtcDisconnect({ room_ref }) {
   return { ok: true };
 }
 
-function handleRtcStatus({ room_ref }) {
+export function handleRtcStatus({ room_ref }) {
   if (room_ref) {
     const st = rooms.get(room_ref);
     if (!st) throw new Error('unknown room_ref');
@@ -213,7 +213,7 @@ function getRoomOrThrow(room_ref) {
   return st;
 }
 
-function handleRtcReadNotebook({ room_ref, cells: cellIndices, cell_id, range, max_chars = 3000 }) {
+export function handleRtcReadNotebook({ room_ref, cells: cellIndices, cell_id, range, max_chars = 3000 }) {
   const st = getRoomOrThrow(room_ref);
   const nb = notebookToJSON(st.handle);
   const cells = nb.cells || [];
@@ -262,7 +262,7 @@ function handleRtcReadNotebook({ room_ref, cells: cellIndices, cell_id, range, m
   return { total_cells: cells.length, cells: result };
 }
 
-function handleRtcInsertCell({ room_ref, index, position = 'end', source = '', metadata = {} }) {
+export function handleRtcInsertCell({ room_ref, index, position = 'end', source = '', metadata = {} }) {
   const st = getRoomOrThrow(room_ref);
   const notebook = st.handle.notebook;
   const totalCells = notebook.cells.length;
@@ -286,7 +286,7 @@ function handleRtcInsertCell({ room_ref, index, position = 'end', source = '', m
   return { cell_id: insertAt, index: insertAt, total_cells: notebook.cells.length };
 }
 
-function handleRtcUpdateCell({ room_ref, cell_id, index, source, outputs, execution_count, metadata }) {
+export function handleRtcUpdateCell({ room_ref, cell_id, index, source, outputs, execution_count, metadata }) {
   const st = getRoomOrThrow(room_ref);
   const notebook = st.handle.notebook;
   let idx = cell_id ?? index;
@@ -325,7 +325,26 @@ function handleRtcUpdateCell({ room_ref, cell_id, index, source, outputs, execut
   return { ok: true, cell_id: idx };
 }
 
-const server = net.createServer((socket) => {
+export function dispatch(req) {
+  switch (req.op) {
+    case 'ping': return { ok: true };
+    case 'open': return handleOpen(req.args || {});
+    case 'exec': return handleExec(req.args || {});
+    case 'collect': return handleCollect(req.args || {});
+    case 'close': return handleClose(req.args || {});
+    case 'list': return handleList();
+    case 'rtc:detect': return handleRtcDetect(req.args || {});
+    case 'rtc:connect': return handleRtcConnect(req.args || {});
+    case 'rtc:disconnect': return handleRtcDisconnect(req.args || {});
+    case 'rtc:status': return handleRtcStatus(req.args || {});
+    case 'rtc:read-notebook': return handleRtcReadNotebook(req.args || {});
+    case 'rtc:insert-cell': return handleRtcInsertCell(req.args || {});
+    case 'rtc:update-cell': return handleRtcUpdateCell(req.args || {});
+    default: return { error: 'unknown op' };
+  }
+}
+
+export const server = net.createServer((socket) => {
   let buf = '';
   socket.on('data', (chunk) => {
     buf += chunk.toString('utf8');
@@ -334,23 +353,7 @@ const server = net.createServer((socket) => {
       const line = buf.slice(0, idx); buf = buf.slice(idx + 1);
       let req; try { req = JSON.parse(line); } catch { socket.write(JSON.stringify({ error: 'bad json' }) + '\n'); continue; }
       try {
-        let res;
-        switch (req.op) {
-          case 'ping': res = { ok: true }; break;
-          case 'open': res = handleOpen(req.args || {}); break;
-          case 'exec': res = handleExec(req.args || {}); break;
-          case 'collect': res = handleCollect(req.args || {}); break;
-          case 'close': res = handleClose(req.args || {}); break;
-          case 'list': res = handleList(); break;
-          case 'rtc:detect': res = handleRtcDetect(req.args || {}); break;
-          case 'rtc:connect': res = handleRtcConnect(req.args || {}); break;
-          case 'rtc:disconnect': res = handleRtcDisconnect(req.args || {}); break;
-          case 'rtc:status': res = handleRtcStatus(req.args || {}); break;
-          case 'rtc:read-notebook': res = handleRtcReadNotebook(req.args || {}); break;
-          case 'rtc:insert-cell': res = handleRtcInsertCell(req.args || {}); break;
-          case 'rtc:update-cell': res = handleRtcUpdateCell(req.args || {}); break;
-          default: res = { error: 'unknown op' };
-        }
+        const res = dispatch(req);
         Promise.resolve(res).then((out) => socket.write(JSON.stringify(out) + '\n')).catch((e) => { try { socket.write(JSON.stringify({ error: e.message || String(e) }) + '\n'); } catch {} });
       } catch (e) {
         socket.write(JSON.stringify({ error: e.message || String(e) }) + '\n');
@@ -359,4 +362,6 @@ const server = net.createServer((socket) => {
   });
 });
 
-server.listen(PORT, '127.0.0.1');
+if (import.meta.url === `file://${process.argv[1]}`) {
+  server.listen(PORT, '127.0.0.1');
+}
