@@ -14,7 +14,7 @@ async function main() {
   if (nb.type !== 'notebook') throw new Error('Path is not a notebook');
   const nbj = nb.content;
   const cells = nbj.cells || (nbj.cells = []);
-  const meta = { role: 'jupyter-driver', created_at: nowIso(), auto_save: false, ...agentMeta };
+  const meta = { ...agentMeta, role: 'jupyter-driver', created_at: nowIso(), auto_save: false };
   const cell = { cell_type: 'code', metadata: { agent: meta }, source, outputs: [], execution_count: null };
   let insertAt;
   if (typeof index === 'number') insertAt = Math.max(0, Math.min(index, cells.length));
