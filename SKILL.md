@@ -189,7 +189,7 @@ When using RTC (`room_ref` provided), this is a **no-op** — the server auto-sa
 ## Typical workflow
 
 ### Recommended (using `run:cell`)
-1. **Configure**: `echo '{"url":"...","token":"..."}' | npx jupyter-link@0.2.7 config:set`
+1. **Configure**: set `JUPYTER_URL` and `JUPYTER_TOKEN` env vars (or run the `config:set` pattern shown in *Configure connection* — never inline the token)
 2. **Check env**: `echo '{}' | npx jupyter-link@0.2.7 check:env`
 3. **Create notebook** (if needed): `echo '{"path":"..."}' | npx jupyter-link@0.2.7 contents:create`
 4. **Open channel**: `echo '{"path":"..."}' | npx jupyter-link@0.2.7 open:kernel-channels` -> get `channel_ref` (auto-creates session if needed)
@@ -198,7 +198,7 @@ When using RTC (`room_ref` provided), this is a **no-op** — the server auto-sa
 7. **Close**: `echo '{"channel_ref":"..."}' | npx jupyter-link@0.2.7 close:channels`
 
 ### Recommended with RTC (real-time collaboration)
-1. **Configure**: `echo '{"url":"...","token":"..."}' | npx jupyter-link@0.2.7 config:set`
+1. **Configure**: set `JUPYTER_URL` and `JUPYTER_TOKEN` env vars (or run the `config:set` pattern shown in *Configure connection* — never inline the token)
 2. **Check env**: `echo '{}' | npx jupyter-link@0.2.7 check:env` (look for `rtc_available: true`)
 3. **Create notebook** (if needed): `echo '{"path":"..."}' | npx jupyter-link@0.2.7 contents:create`
 4. **Open channel + RTC**: `echo '{"path":"...","rtc":true}' | npx jupyter-link@0.2.7 open:kernel-channels` -> get `channel_ref` + `room_ref`
@@ -207,7 +207,7 @@ When using RTC (`room_ref` provided), this is a **no-op** — the server auto-sa
    (No save needed — server auto-saves Y.Doc changes)
 
 ### Granular (step-by-step control)
-1. **Configure**: `echo '{"url":"...","token":"..."}' | npx jupyter-link@0.2.7 config:set`
+1. **Configure**: set `JUPYTER_URL` and `JUPYTER_TOKEN` env vars (or run the `config:set` pattern shown in *Configure connection* — never inline the token)
 2. **Check env**: `echo '{}' | npx jupyter-link@0.2.7 check:env`
 3. **Create notebook** (if needed): `echo '{"path":"..."}' | npx jupyter-link@0.2.7 contents:create`
 4. **Create session** (if needed): `echo '{"path":"..."}' | npx jupyter-link@0.2.7 sessions:create`

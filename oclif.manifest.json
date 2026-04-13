@@ -63,6 +63,27 @@
         "update.mjs"
       ]
     },
+    "check:env": {
+      "aliases": [],
+      "args": {},
+      "description": "Verify connectivity and basic Jupyter Server compatibility",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "check:env",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "check",
+        "env.mjs"
+      ]
+    },
     "close:channels": {
       "aliases": [],
       "args": {},
@@ -82,69 +103,6 @@
         "commands",
         "close",
         "channels.mjs"
-      ]
-    },
-    "collect:outputs": {
-      "aliases": [],
-      "args": {},
-      "description": "Wait for outputs/reply/idle for a parent_msg_id on a channel",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "collect:outputs",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "collect",
-        "outputs.mjs"
-      ]
-    },
-    "config:get": {
-      "aliases": [],
-      "args": {},
-      "description": "Show effective configuration (env vars > config file > defaults)",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "config:get",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "config",
-        "get.mjs"
-      ]
-    },
-    "config:set": {
-      "aliases": [],
-      "args": {},
-      "description": "Save Jupyter connection settings to ~/.config/jupyter-link/config.json",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "config:set",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "config",
-        "set.mjs"
       ]
     },
     "contents:create": {
@@ -210,6 +168,69 @@
         "write.mjs"
       ]
     },
+    "config:get": {
+      "aliases": [],
+      "args": {},
+      "description": "Show effective configuration (env vars > config file > defaults)",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "config:get",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "config",
+        "get.mjs"
+      ]
+    },
+    "config:set": {
+      "aliases": [],
+      "args": {},
+      "description": "Save Jupyter connection settings to ~/.config/jupyter-link/config.json",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "config:set",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "config",
+        "set.mjs"
+      ]
+    },
+    "collect:outputs": {
+      "aliases": [],
+      "args": {},
+      "description": "Wait for outputs/reply/idle for a parent_msg_id on a channel",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "collect:outputs",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "collect",
+        "outputs.mjs"
+      ]
+    },
     "execute:code": {
       "aliases": [],
       "args": {},
@@ -231,14 +252,14 @@
         "code.mjs"
       ]
     },
-    "check:env": {
+    "list:sessions": {
       "aliases": [],
       "args": {},
-      "description": "Verify connectivity and basic Jupyter Server compatibility",
+      "description": "List sessions and optionally filter by path or name",
       "flags": {},
       "hasDynamicHelp": false,
       "hiddenAliases": [],
-      "id": "check:env",
+      "id": "list:sessions",
       "pluginAlias": "jupyter-link",
       "pluginName": "jupyter-link",
       "pluginType": "core",
@@ -248,8 +269,8 @@
       "relativePath": [
         "src",
         "commands",
-        "check",
-        "env.mjs"
+        "list",
+        "sessions.mjs"
       ]
     },
     "open:kernel-channels": {
@@ -292,27 +313,6 @@
         "commands",
         "run",
         "cell.mjs"
-      ]
-    },
-    "list:sessions": {
-      "aliases": [],
-      "args": {},
-      "description": "List sessions and optionally filter by path or name",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "list:sessions",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "list",
-        "sessions.mjs"
       ]
     },
     "sessions:create": {
