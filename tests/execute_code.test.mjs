@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-const C = { readStdinJson: vi.fn(), ok: vi.fn(), assertNodeVersion: vi.fn() };
+const C = { readStdinJson: vi.fn(), ok: vi.fn(), assertNodeVersion: vi.fn(), validateNotebookPath: (p) => p, validateKernelId: (id) => id, assertHttpUrl: (u) => new URL(u), encodeNotebookPath: (p) => encodeURIComponent(p) };
 const D = { ensureDaemon: vi.fn().mockResolvedValue(), request: vi.fn() };
 vi.mock('../src/lib/common.mjs', () => C);
 vi.mock('../src/lib/daemonClient.mjs', () => D);

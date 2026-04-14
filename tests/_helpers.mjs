@@ -11,6 +11,11 @@ export function makeCommonMock(overrides = {}) {
     loadConfigFile: vi.fn(() => ({})),
     saveConfigFile: vi.fn((d) => ({ ...d })),
     configPath: vi.fn(() => '/tmp/jupyter-link/config.json'),
+    assertHttpUrl: vi.fn((u) => new URL(u)),
+    validateKernelId: vi.fn((id) => id),
+    validateSessionId: vi.fn((id) => id),
+    validateNotebookPath: vi.fn((p) => p),
+    encodeNotebookPath: vi.fn((p) => encodeURIComponent(p)),
     ...overrides,
   };
 }

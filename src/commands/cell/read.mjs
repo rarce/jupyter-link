@@ -1,5 +1,5 @@
 import { Command } from '@oclif/core';
-import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion } from '../../lib/common.mjs';
+import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
 import { ensureDaemon, request } from '../../lib/daemonClient.mjs';
 
 export function summarizeOutput(out, maxChars) {
@@ -73,6 +73,7 @@ export default class ReadCell extends Command {
     }
 
     // REST path (original)
+    validateNotebookPath(path);
     const { baseUrl, token } = getConfig();
     const nb = await httpJson('GET', `${baseUrl}/api/contents/${encodeURIComponent(path)}?content=1`, token);
     if (nb.type !== 'notebook') throw new Error('Path is not a notebook');

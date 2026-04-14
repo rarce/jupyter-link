@@ -1,4 +1,4 @@
-import { getConfig, httpJson, readStdinJson, ok, fail, assertNodeVersion } from './util.mjs';
+import { getConfig, httpJson, readStdinJson, ok, fail, assertNodeVersion, validateNotebookPath } from './util.mjs';
 import { ensureDaemon, request } from './ipc_client.mjs';
 
 async function main() {
@@ -10,6 +10,7 @@ async function main() {
     // discover by session/notebook
     const nbPath = input.path ?? input.notebook;
     if (!nbPath) throw new Error('kernel_id or notebook path required');
+    validateNotebookPath(nbPath);
     const sessions = await httpJson('GET', `${baseUrl}/api/sessions`, token);
     let session = sessions.find(s => s.notebook && s.notebook.path === nbPath);
     if (!session) {

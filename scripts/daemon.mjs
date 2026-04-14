@@ -5,7 +5,7 @@ import { writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { URL } from 'node:url';
 import { mapIopubToOutput, isStatusIdle, isParent, makeExecuteRequest } from './jupyter_proto.mjs';
-import { nowIso, newSessionId, getConfig } from '../src/lib/common.mjs';
+import { nowIso, newSessionId, getConfig, assertHttpUrl, validateKernelId } from '../src/lib/common.mjs';
 import { detectRTC, resolveRoom } from '../src/lib/rtcDetect.mjs';
 import { connectRoom, notebookToJSON, connectGlobalAwareness } from '../src/lib/yjsClient.mjs';
 import { VERSION } from '../src/lib/version.mjs';
@@ -33,7 +33,8 @@ async function ensureGlobalAwareness({ baseUrl, token, agentName, agentColor }) 
 }
 
 export function wsUrlFor(baseUrl, token, kernelId, sessionId) {
-  const url = new URL(baseUrl);
+  const url = assertHttpUrl(baseUrl);
+  validateKernelId(kernelId);
   const wsScheme = url.protocol === 'https:' ? 'wss:' : 'ws:';
   const query = new URLSearchParams();
   if (token) query.set('token', token);

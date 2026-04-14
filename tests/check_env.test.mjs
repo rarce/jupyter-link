@@ -4,6 +4,7 @@ const C = {
   httpJson: vi.fn(), ok: vi.fn(),
   getConfig: vi.fn(() => ({ baseUrl: 'http://h', token: 't' })),
   assertNodeVersion: vi.fn(),
+  validateNotebookPath: vi.fn((p) => p), validateKernelId: vi.fn((id) => id), assertHttpUrl: vi.fn((u) => new URL(u)), encodeNotebookPath: vi.fn((p) => encodeURIComponent(p)),
 };
 const R = { detectRTC: vi.fn() };
 vi.mock('../src/lib/common.mjs', () => C);

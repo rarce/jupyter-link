@@ -1,5 +1,5 @@
 import { Command } from '@oclif/core';
-import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion } from '../../lib/common.mjs';
+import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
 
 export default class SessionsCreate extends Command {
   static description = 'Create a Jupyter session (start a kernel) for a notebook';
@@ -8,6 +8,7 @@ export default class SessionsCreate extends Command {
     const input = await readStdinJson();
     const path = input.path ?? input.notebook;
     if (!path) throw new Error('path is required');
+    validateNotebookPath(path);
     const kernelName = input.kernel_name ?? input.kernel ?? 'python3';
     const type = input.type ?? 'notebook';
     const { baseUrl, token } = getConfig();

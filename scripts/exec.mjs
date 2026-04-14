@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { getConfig, httpJson, readStdinJson, ok, fail, assertNodeVersion, joinUrl, newSessionId, nowIso } from './util.mjs';
+import { getConfig, httpJson, readStdinJson, ok, fail, assertNodeVersion, joinUrl, newSessionId, nowIso, assertHttpUrl, validateKernelId, validateNotebookPath, encodeNotebookPath } from './util.mjs';
 import { makeExecuteRequest, mapIopubToOutput, isStatusIdle, isParent } from './jupyter_proto.mjs';
 
 async function main() {
@@ -11,6 +11,7 @@ async function main() {
   const autoSave = Boolean(input.auto_save);
   if (!notebookPath) throw new Error('notebook path is required');
   if (!code) throw new Error('code is required');
+  validateNotebookPath(notebookPath);
 
   const { baseUrl, token } = getConfig();
   // pick a session
@@ -23,9 +24,10 @@ async function main() {
   if (!session) throw new Error('No running session found for the target notebook');
   const kernelId = session.kernel && session.kernel.id;
   if (!kernelId) throw new Error('Selected session has no kernel id');
+  validateKernelId(kernelId);
 
   // read notebook and select cell
-  const nbWrap = await httpJson('GET', `${baseUrl}/api/contents/${encodeURIComponent(notebookPath)}?content=1`, token);
+  const nbWrap = await httpJson('GET', `${baseUrl}/api/contents/${encodeNotebookPath(notebookPath)}?content=1`, token);
   if (nbWrap.type !== 'notebook') throw new Error('Path is not a notebook');
   const nb = nbWrap.content;
   const cells = nb.cells || (nb.cells = []);
@@ -48,10 +50,10 @@ async function main() {
     cell.outputs = [];
     cell.execution_count = null;
   }
-  await httpJson('PUT', `${baseUrl}/api/contents/${encodeURIComponent(notebookPath)}`, token, { type: 'notebook', format: 'json', content: nb });
+  await httpJson('PUT', `${baseUrl}/api/contents/${encodeNotebookPath(notebookPath)}`, token, { type: 'notebook', format: 'json', content: nb });
 
   // open ws and execute
-  const url = new URL(baseUrl);
+  const url = assertHttpUrl(baseUrl);
   const wsScheme = url.protocol === 'https:' ? 'wss:' : 'ws:';
   const query = new URLSearchParams();
   if (token) query.set('token', token);
@@ -98,14 +100,14 @@ async function main() {
   });
 
   // update cell with outputs
-  const nb2Wrap = await httpJson('GET', `${baseUrl}/api/contents/${encodeURIComponent(notebookPath)}?content=1`, token);
+  const nb2Wrap = await httpJson('GET', `${baseUrl}/api/contents/${encodeNotebookPath(notebookPath)}?content=1`, token);
   const nb2 = nb2Wrap.content;
   const cell = nb2.cells[idx];
   cell.outputs = outputs;
   cell.execution_count = executionCount;
   cell.metadata = cell.metadata || {};
   cell.metadata.agent = { ...cell.metadata.agent, auto_save: autoSave };
-  await httpJson('PUT', `${baseUrl}/api/contents/${encodeURIComponent(notebookPath)}`, token, { type: 'notebook', format: 'json', content: nb2 });
+  await httpJson('PUT', `${baseUrl}/api/contents/${encodeNotebookPath(notebookPath)}`, token, { type: 'notebook', format: 'json', content: nb2 });
   if (autoSave) {
     // nothing extra; PUT above persists changes
   }

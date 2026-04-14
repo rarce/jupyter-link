@@ -9,7 +9,7 @@
  * single probe is enough.
  */
 
-import { joinUrl } from './common.mjs';
+import { joinUrl, assertHttpUrl, validateNotebookPath } from './common.mjs';
 
 /**
  * Detect whether jupyter-collaboration is available on the server.
@@ -53,6 +53,7 @@ export async function detectRTC(baseUrl, token) {
 export async function resolveRoom(baseUrl, token, notebookPath) {
   // The path sent to the API should not have a leading slash
   const cleanPath = notebookPath.replace(/^\//, '');
+  validateNotebookPath(cleanPath);
   const url = joinUrl(baseUrl, `/api/collaboration/session/${encodeURIComponent(cleanPath)}`);
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `token ${token}`;
@@ -77,10 +78,14 @@ export async function resolveRoom(baseUrl, token, notebookPath) {
  * Build the collaboration WebSocket URL for a given room.
  */
 export function roomWsUrl(baseUrl, token, roomId, sessionId) {
-  const u = new URL(baseUrl);
+  const u = assertHttpUrl(baseUrl);
+  if (typeof roomId !== 'string' || !/^[A-Za-z0-9_.:-]{1,200}$/.test(roomId)) {
+    throw new Error('Invalid roomId');
+  }
   const wsScheme = u.protocol === 'https:' ? 'wss:' : 'ws:';
   const params = new URLSearchParams();
   if (token) params.set('token', token);
   if (sessionId) params.set('sessionId', sessionId);
+  // roomId is validated against a strict charset above, so interpolating directly is safe.
   return `${wsScheme}//${u.host}${u.pathname.replace(/\/$/, '')}/api/collaboration/room/${roomId}?${params.toString()}`;
 }

@@ -1,4 +1,4 @@
-import { getConfig, httpJson, readStdinJson, ok, fail, assertNodeVersion, nowIso } from './util.mjs';
+import { getConfig, httpJson, readStdinJson, ok, fail, assertNodeVersion, nowIso, validateNotebookPath } from './util.mjs';
 
 async function main() {
   assertNodeVersion();
@@ -9,6 +9,7 @@ async function main() {
   const source = input.code ?? input.source ?? '';
   const agentMeta = input.metadata || {};
   if (!path) throw new Error('path is required');
+  validateNotebookPath(path);
   const { baseUrl, token } = getConfig();
   const nb = await httpJson('GET', `${baseUrl}/api/contents/${encodeURIComponent(path)}?content=1`, token);
   if (nb.type !== 'notebook') throw new Error('Path is not a notebook');

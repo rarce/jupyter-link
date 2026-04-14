@@ -1,5 +1,5 @@
 import { Command } from '@oclif/core';
-import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion, nowIso } from '../../lib/common.mjs';
+import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion, nowIso, validateNotebookPath } from '../../lib/common.mjs';
 import { ensureDaemon, request } from '../../lib/daemonClient.mjs';
 
 export default class RunCell extends Command {
@@ -19,6 +19,7 @@ export default class RunCell extends Command {
     if (!path && !roomRef) throw new Error('path is required');
     if (!channelRef) throw new Error('channel_ref is required (call open:kernel-channels first)');
     if (!code) throw new Error('code is required');
+    if (path) validateNotebookPath(path);
 
     await ensureDaemon();
 

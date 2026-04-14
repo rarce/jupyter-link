@@ -1,5 +1,5 @@
 import { Command } from '@oclif/core';
-import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion } from '../../lib/common.mjs';
+import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
 import { ensureDaemon, request } from '../../lib/daemonClient.mjs';
 
 export default class OpenKernelChannels extends Command {
@@ -12,6 +12,7 @@ export default class OpenKernelChannels extends Command {
     const nbPath = input.path ?? input.notebook;
     if (!kernelId) {
       if (!nbPath) throw new Error('kernel_id or notebook path required');
+      validateNotebookPath(nbPath);
       const sessions = await httpJson('GET', `${baseUrl}/api/sessions`, token);
       let session = sessions.find(s => s.notebook && s.notebook.path === nbPath);
       if (!session) { const name = nbPath.split('/').pop(); session = sessions.find(s => s.notebook && s.notebook.path && s.notebook.path.endsWith('/' + name)); }

@@ -4,6 +4,7 @@ const C = {
   readStdinJson: vi.fn(), httpJson: vi.fn(), ok: vi.fn(),
   getConfig: vi.fn(() => ({ baseUrl: 'http://h', token: 't' })),
   assertNodeVersion: vi.fn(), nowIso: () => '2026-04-12T10:00:00Z',
+  validateNotebookPath: vi.fn((p) => p), validateKernelId: vi.fn((id) => id), assertHttpUrl: vi.fn((u) => new URL(u)), encodeNotebookPath: vi.fn((p) => encodeURIComponent(p)),
 };
 const D = { ensureDaemon: vi.fn().mockResolvedValue(), request: vi.fn() };
 
