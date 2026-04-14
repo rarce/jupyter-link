@@ -1,4 +1,4 @@
-import { getConfig, httpJson, readStdinJson, ok, fail, assertNodeVersion } from './util.mjs';
+import { getConfig, httpJson, readStdinJson, ok, fail, assertNodeVersion, validateNotebookPath } from './util.mjs';
 
 function findLatestAgentCellIndex(nb) {
   const cells = nb.cells || [];
@@ -19,6 +19,7 @@ async function main() {
   const execution_count = input.execution_count;
   const metadata = input.metadata;
   if (!path) throw new Error('path is required');
+  validateNotebookPath(path);
   const { baseUrl, token } = getConfig();
   const nb = await httpJson('GET', `${baseUrl}/api/contents/${encodeURIComponent(path)}?content=1`, token);
   if (nb.type !== 'notebook') throw new Error('Path is not a notebook');

@@ -18,6 +18,7 @@ import * as encoding from 'lib0/encoding';
 import * as decoding from 'lib0/decoding';
 import { YNotebook } from '@jupyter/ydoc';
 import { roomWsUrl } from './rtcDetect.mjs';
+import { assertHttpUrl } from './common.mjs';
 
 // jupyter-collaboration message type prefixes
 const MSG_SYNC = 0;
@@ -261,7 +262,7 @@ export function notebookToJSON(handle) {
  */
 export function connectGlobalAwareness({ baseUrl, token, agentName, agentColor }) {
   return new Promise((resolve, reject) => {
-    const u = new URL(baseUrl);
+    const u = assertHttpUrl(baseUrl);
     const wsScheme = u.protocol === 'https:' ? 'wss:' : 'ws:';
     const params = new URLSearchParams();
     if (token) params.set('token', token);

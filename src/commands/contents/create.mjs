@@ -1,5 +1,5 @@
 import { Command } from '@oclif/core';
-import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion } from '../../lib/common.mjs';
+import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
 
 export default class ContentsCreate extends Command {
   static description = 'Create a new empty notebook with proper nbformat v4 boilerplate';
@@ -8,6 +8,7 @@ export default class ContentsCreate extends Command {
     const input = await readStdinJson();
     const path = input.path ?? input.notebook;
     if (!path) throw new Error('path is required');
+    validateNotebookPath(path);
     const kernelName = input.kernel_name ?? input.kernel ?? 'python3';
     const displayName = input.display_name ?? kernelName.replace(/^\w/, c => c.toUpperCase()).replace(/(\d)/, ' $1');
     const language = input.language ?? (kernelName.startsWith('python') ? 'python' : kernelName);

@@ -11,6 +11,7 @@ vi.mock('../src/lib/common.mjs', () => ({
   ok: (...args) => mockOk(...args),
   getConfig: (...args) => mockGetConfig(...args),
   assertNodeVersion: () => {},
+  validateNotebookPath: (p) => p, validateKernelId: (id) => id, assertHttpUrl: (u) => new URL(u), encodeNotebookPath: (p) => encodeURIComponent(p),
 }));
 
 const { default: ContentsCreate } = await import('../src/commands/contents/create.mjs');

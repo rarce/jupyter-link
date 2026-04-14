@@ -1,4 +1,4 @@
-import { getConfig, httpJson, readStdinJson, ok, fail, assertNodeVersion } from './util.mjs';
+import { getConfig, httpJson, readStdinJson, ok, fail, assertNodeVersion, validateNotebookPath } from './util.mjs';
 
 async function main() {
   assertNodeVersion();
@@ -7,6 +7,7 @@ async function main() {
   const nb = input.nb_json ?? input.content;
   if (!path) throw new Error('path is required');
   if (!nb) throw new Error('nb_json is required');
+  validateNotebookPath(path);
   const { baseUrl, token } = getConfig();
   const body = { type: 'notebook', format: 'json', content: nb };
   await httpJson('PUT', `${baseUrl}/api/contents/${encodeURIComponent(path)}`, token, body);

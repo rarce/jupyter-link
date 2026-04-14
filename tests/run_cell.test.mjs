@@ -14,6 +14,7 @@ vi.mock('../src/lib/common.mjs', () => ({
   getConfig: (...args) => mockGetConfig(...args),
   assertNodeVersion: () => {},
   nowIso: () => '2026-04-12T10:00:00Z',
+  validateNotebookPath: (p) => p, validateKernelId: (id) => id, assertHttpUrl: (u) => new URL(u), encodeNotebookPath: (p) => encodeURIComponent(p),
 }));
 
 vi.mock('../src/lib/daemonClient.mjs', () => ({
