@@ -53,6 +53,10 @@
   "bin": {
     "jupyter-link": "bin/run"
   },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "oclif": {
     "bin": "jupyter-link",
     "commands": "./src/commands",
