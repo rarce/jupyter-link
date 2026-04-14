@@ -1,18 +1,24 @@
 import { Command } from '@oclif/core';
-import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
+import { getConfig, httpJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
+import { commonFlags, applyUrlFlag } from '../../lib/flags.mjs';
 import { ensureDaemon, request } from '../../lib/daemonClient.mjs';
 
 export default class SaveNotebook extends Command {
   static description = 'Save notebook (round-trip PUT, or no-op when using RTC)';
+  static flags = {
+    url: commonFlags.url,
+    notebook: commonFlags.notebook,
+    room: commonFlags.room,
+  };
   async run() {
     assertNodeVersion();
-    const input = await readStdinJson();
-    const path = input.path ?? input.notebook;
-    const roomRef = input.room_ref;
-    if (!path && !roomRef) throw new Error('path is required');
+    const { flags } = await this.parse(SaveNotebook);
+    applyUrlFlag(flags);
 
-    // RTC path: Y.Doc changes auto-save to disk via jupyter-collaboration (~1s).
-    // Nothing to do, but we can verify the room is still connected.
+    const path = flags.notebook;
+    const roomRef = flags.room;
+    if (!path && !roomRef) throw new Error('--notebook is required');
+
     if (roomRef) {
       await ensureDaemon();
       const out = await request('rtc:status', { room_ref: roomRef });
@@ -21,7 +27,6 @@ export default class SaveNotebook extends Command {
       return;
     }
 
-    // REST path (original)
     validateNotebookPath(path);
     const { baseUrl, token } = getConfig();
     const nb = await httpJson('GET', `${baseUrl}/api/contents/${encodeURIComponent(path)}?content=1`, token);

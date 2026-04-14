@@ -1,24 +1,32 @@
-import { Command } from '@oclif/core';
-import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
+import { Command, Flags } from '@oclif/core';
+import { getConfig, httpJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
+import { commonFlags, applyUrlFlag } from '../../lib/flags.mjs';
 
 export default class ContentsCreate extends Command {
   static description = 'Create a new empty notebook with proper nbformat v4 boilerplate';
+  static flags = {
+    url: commonFlags.url,
+    notebook: commonFlags.notebook,
+    'kernel-name': commonFlags['kernel-name'],
+    'display-name': Flags.string({ description: 'Kernel display name' }),
+    language: Flags.string({ description: 'Kernel language' }),
+  };
   async run() {
     assertNodeVersion();
-    const input = await readStdinJson();
-    const path = input.path ?? input.notebook;
-    if (!path) throw new Error('path is required');
+    const { flags } = await this.parse(ContentsCreate);
+    applyUrlFlag(flags);
+    const path = flags.notebook;
+    if (!path) throw new Error('--notebook is required');
     validateNotebookPath(path);
-    const kernelName = input.kernel_name ?? input.kernel ?? 'python3';
-    const displayName = input.display_name ?? kernelName.replace(/^\w/, c => c.toUpperCase()).replace(/(\d)/, ' $1');
-    const language = input.language ?? (kernelName.startsWith('python') ? 'python' : kernelName);
+    const kernelName = flags['kernel-name'];
+    const displayName = flags['display-name'] ?? kernelName.replace(/^\w/, c => c.toUpperCase()).replace(/(\d)/, ' $1');
+    const language = flags.language ?? (kernelName.startsWith('python') ? 'python' : kernelName);
     const { baseUrl, token } = getConfig();
 
-    // Check if notebook already exists
     try {
       const existing = await httpJson('GET', `${baseUrl}/api/contents/${encodeURIComponent(path)}`, token);
       if (existing && existing.type === 'notebook') return ok({ ok: true, created: false, path });
-    } catch { /* 404 — does not exist, proceed to create */ }
+    } catch { /* 404 — proceed */ }
 
     const nb = {
       nbformat: 4,
@@ -29,7 +37,6 @@ export default class ContentsCreate extends Command {
       },
       cells: [],
     };
-
     await httpJson('PUT', `${baseUrl}/api/contents/${encodeURIComponent(path)}`, token, {
       type: 'notebook', format: 'json', content: nb,
     });

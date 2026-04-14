@@ -1,5 +1,12 @@
 import { vi } from 'vitest';
 
+// Minimal oclif config stub: enough for `this.parse()` to not blow up.
+export function oclifConfig() {
+  return {
+    runHook: async () => ({ successes: [], failures: [] }),
+  };
+}
+
 export function makeCommonMock(overrides = {}) {
   return {
     readStdinJson: vi.fn(),

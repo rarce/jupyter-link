@@ -1,26 +1,37 @@
 import { Command } from '@oclif/core';
-import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
+import { getConfig, httpJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
+import { commonFlags, applyUrlFlag, rtcFlag } from '../../lib/flags.mjs';
 import { ensureDaemon, request } from '../../lib/daemonClient.mjs';
 
 export default class OpenKernelChannels extends Command {
   static description = 'Open persistent kernel WS channels and optionally connect an RTC room';
+  static flags = {
+    url: commonFlags.url,
+    notebook: commonFlags.notebook,
+    'kernel-id': commonFlags['kernel-id'],
+    'kernel-name': commonFlags['kernel-name'],
+    rtc: commonFlags.rtc,
+  };
   async run() {
     assertNodeVersion();
-    const input = await readStdinJson();
+    const { flags } = await this.parse(OpenKernelChannels);
+    applyUrlFlag(flags);
+
     const { baseUrl, token } = getConfig();
-    let kernelId = input.kernel_id;
-    const nbPath = input.path ?? input.notebook;
+    let kernelId = flags['kernel-id'];
+    const nbPath = flags.notebook;
     if (!kernelId) {
-      if (!nbPath) throw new Error('kernel_id or notebook path required');
+      if (!nbPath) throw new Error('--kernel-id or --notebook is required');
       validateNotebookPath(nbPath);
       const sessions = await httpJson('GET', `${baseUrl}/api/sessions`, token);
       let session = sessions.find(s => s.notebook && s.notebook.path === nbPath);
-      if (!session) { const name = nbPath.split('/').pop(); session = sessions.find(s => s.notebook && s.notebook.path && s.notebook.path.endsWith('/' + name)); }
       if (!session) {
-        // Auto-create session if kernel_name is provided (or default to python3)
-        const kernelName = input.kernel_name ?? input.kernel ?? 'python3';
         const name = nbPath.split('/').pop();
-        const body = { path: nbPath, name, type: 'notebook', kernel: { name: kernelName } };
+        session = sessions.find(s => s.notebook && s.notebook.path && s.notebook.path.endsWith('/' + name));
+      }
+      if (!session) {
+        const name = nbPath.split('/').pop();
+        const body = { path: nbPath, name, type: 'notebook', kernel: { name: flags['kernel-name'] } };
         session = await httpJson('POST', `${baseUrl}/api/sessions`, token, body);
       }
       kernelId = session.kernel && session.kernel.id;
@@ -31,13 +42,9 @@ export default class OpenKernelChannels extends Command {
     if (out.error) throw new Error(out.error);
 
     const result = { ...out };
-
-    // RTC is auto-preferred: if the server has jupyter-collaboration, use it.
-    // Modes: undefined|'auto' = try, degrade silently; true = strict (throw on failure);
-    //        false = opt-out (REST only).
-    const rtcMode = input.rtc === undefined ? 'auto' : input.rtc;
-    const strict = rtcMode === true;
-    if (rtcMode !== false && nbPath) {
+    const strict = rtcFlag(flags.rtc) === true;
+    const tryRtc = rtcFlag(flags.rtc) !== false;
+    if (tryRtc && nbPath) {
       try {
         const rtcOut = await request('rtc:connect', { baseUrl, token, notebookPath: nbPath });
         if (rtcOut.error) {
@@ -55,7 +62,6 @@ export default class OpenKernelChannels extends Command {
         result.rtc_error = e.message;
       }
     }
-
     ok(result);
   }
 }

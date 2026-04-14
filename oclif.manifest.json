@@ -1,10 +1,204 @@
 {
   "commands": {
+    "exec": {
+      "aliases": [],
+      "args": {},
+      "description": "Execute code against a notebook in a single call (auto-opens and reuses channels)",
+      "examples": [
+        "$ jupyter-link exec --url http://host:8888/notebooks/foo.ipynb?token=XYZ --code-file /tmp/x.py",
+        "$ jupyter-link exec --notebook foo.ipynb --code \"print(1+1)\""
+      ],
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "notebook": {
+          "char": "n",
+          "description": "Notebook path (server-relative, POSIX-style)",
+          "name": "notebook",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "code": {
+          "description": "Code literal. Use '-' to read raw stdin.",
+          "name": "code",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "code-file": {
+          "description": "Path to a file whose contents are the code",
+          "name": "code-file",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "index": {
+          "description": "Cell index (0-based)",
+          "name": "index",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "position": {
+          "description": "Insert position when index is omitted",
+          "name": "position",
+          "default": "end",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "options": [
+            "start",
+            "end"
+          ],
+          "type": "option"
+        },
+        "timeout": {
+          "description": "Timeout in seconds",
+          "name": "timeout",
+          "default": 60,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "kernel-name": {
+          "description": "Kernel spec name (e.g. python3)",
+          "name": "kernel-name",
+          "default": "python3",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "stop-on-error": {
+          "description": "Stop kernel on first error",
+          "name": "stop-on-error",
+          "allowNo": true,
+          "type": "boolean"
+        },
+        "metadata": {
+          "description": "JSON string merged into cell agent metadata",
+          "name": "metadata",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "exec",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "exec.mjs"
+      ]
+    },
+    "check:env": {
+      "aliases": [],
+      "args": {},
+      "description": "Verify connectivity and basic Jupyter Server compatibility",
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "check:env",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "check",
+        "env.mjs"
+      ]
+    },
     "cell:insert": {
       "aliases": [],
       "args": {},
       "description": "Insert a code cell with agent metadata",
-      "flags": {},
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "notebook": {
+          "char": "n",
+          "description": "Notebook path (server-relative, POSIX-style)",
+          "name": "notebook",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "room": {
+          "description": "RTC room_ref from open:kernel-channels",
+          "name": "room",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "code": {
+          "description": "Code literal. Use '-' to read raw stdin.",
+          "name": "code",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "code-file": {
+          "description": "Path to a file whose contents are the code",
+          "name": "code-file",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "index": {
+          "description": "Cell index (0-based)",
+          "name": "index",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "position": {
+          "description": "Insert position when index is omitted",
+          "name": "position",
+          "default": "end",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "options": [
+            "start",
+            "end"
+          ],
+          "type": "option"
+        },
+        "metadata": {
+          "description": "JSON string merged into cell agent metadata",
+          "name": "metadata",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
       "hasDynamicHelp": false,
       "hiddenAliases": [],
       "id": "cell:insert",
@@ -25,7 +219,59 @@
       "aliases": [],
       "args": {},
       "description": "Read specific cells from a notebook with their outputs, source, and metadata",
-      "flags": {},
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "notebook": {
+          "char": "n",
+          "description": "Notebook path (server-relative, POSIX-style)",
+          "name": "notebook",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "room": {
+          "description": "RTC room_ref from open:kernel-channels",
+          "name": "room",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "cells": {
+          "description": "Comma-separated cell indices (e.g. \"0,4,8\")",
+          "name": "cells",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "cell-id": {
+          "description": "Single cell index",
+          "name": "cell-id",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "range": {
+          "description": "Range \"start:end\" (end-exclusive)",
+          "name": "range",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "max-chars": {
+          "description": "Max characters per output/source field",
+          "name": "max-chars",
+          "default": 3000,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
       "hasDynamicHelp": false,
       "hiddenAliases": [],
       "id": "cell:read",
@@ -46,7 +292,72 @@
       "aliases": [],
       "args": {},
       "description": "Update a code cell (source/outputs/execution_count/metadata)",
-      "flags": {},
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "notebook": {
+          "char": "n",
+          "description": "Notebook path (server-relative, POSIX-style)",
+          "name": "notebook",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "room": {
+          "description": "RTC room_ref from open:kernel-channels",
+          "name": "room",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "cell-id": {
+          "description": "Target cell index (defaults to latest agent-managed cell)",
+          "name": "cell-id",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "code": {
+          "description": "Code literal. Use '-' to read raw stdin.",
+          "name": "code",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "code-file": {
+          "description": "Path to a file whose contents are the code",
+          "name": "code-file",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "outputs": {
+          "description": "JSON array of nbformat outputs",
+          "name": "outputs",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "execution-count": {
+          "description": "Cell execution_count to set",
+          "name": "execution-count",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "metadata": {
+          "description": "JSON string merged into cell agent metadata",
+          "name": "metadata",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
       "hasDynamicHelp": false,
       "hiddenAliases": [],
       "id": "cell:update",
@@ -63,32 +374,34 @@
         "update.mjs"
       ]
     },
-    "close:channels": {
-      "aliases": [],
-      "args": {},
-      "description": "Close a previously opened channel_ref (and optionally an RTC room_ref)",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "close:channels",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "close",
-        "channels.mjs"
-      ]
-    },
     "collect:outputs": {
       "aliases": [],
       "args": {},
       "description": "Wait for outputs/reply/idle for a parent_msg_id on a channel",
-      "flags": {},
+      "flags": {
+        "ref": {
+          "description": "Channel ref from open:kernel-channels",
+          "name": "ref",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "parent-id": {
+          "description": "parent_msg_id from execute:code",
+          "name": "parent-id",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "timeout": {
+          "description": "Timeout in seconds",
+          "name": "timeout",
+          "default": 60,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
       "hasDynamicHelp": false,
       "hiddenAliases": [],
       "id": "collect:outputs",
@@ -105,14 +418,29 @@
         "outputs.mjs"
       ]
     },
-    "check:env": {
+    "close:channels": {
       "aliases": [],
       "args": {},
-      "description": "Verify connectivity and basic Jupyter Server compatibility",
-      "flags": {},
+      "description": "Close a previously opened channel_ref (and optionally an RTC room_ref)",
+      "flags": {
+        "ref": {
+          "description": "Channel ref from open:kernel-channels",
+          "name": "ref",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "room": {
+          "description": "RTC room_ref from open:kernel-channels",
+          "name": "room",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
       "hasDynamicHelp": false,
       "hiddenAliases": [],
-      "id": "check:env",
+      "id": "close:channels",
       "pluginAlias": "jupyter-link",
       "pluginName": "jupyter-link",
       "pluginType": "core",
@@ -122,15 +450,53 @@
       "relativePath": [
         "src",
         "commands",
-        "check",
-        "env.mjs"
+        "close",
+        "channels.mjs"
       ]
     },
     "contents:create": {
       "aliases": [],
       "args": {},
       "description": "Create a new empty notebook with proper nbformat v4 boilerplate",
-      "flags": {},
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "notebook": {
+          "char": "n",
+          "description": "Notebook path (server-relative, POSIX-style)",
+          "name": "notebook",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "kernel-name": {
+          "description": "Kernel spec name (e.g. python3)",
+          "name": "kernel-name",
+          "default": "python3",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "display-name": {
+          "description": "Kernel display name",
+          "name": "display-name",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "language": {
+          "description": "Kernel language",
+          "name": "language",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
       "hasDynamicHelp": false,
       "hiddenAliases": [],
       "id": "contents:create",
@@ -151,7 +517,23 @@
       "aliases": [],
       "args": {},
       "description": "Read a notebook JSON via Contents API",
-      "flags": {},
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "notebook": {
+          "char": "n",
+          "description": "Notebook path (server-relative, POSIX-style)",
+          "name": "notebook",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
       "hasDynamicHelp": false,
       "hiddenAliases": [],
       "id": "contents:read",
@@ -172,7 +554,37 @@
       "aliases": [],
       "args": {},
       "description": "Write notebook JSON via Contents API",
-      "flags": {},
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "notebook": {
+          "char": "n",
+          "description": "Notebook path (server-relative, POSIX-style)",
+          "name": "notebook",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "content-file": {
+          "description": "Path to JSON file with notebook content",
+          "name": "content-file",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "content": {
+          "description": "Literal notebook JSON (prefer --content-file for large payloads)",
+          "name": "content",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
       "hasDynamicHelp": false,
       "hiddenAliases": [],
       "id": "contents:write",
@@ -187,132 +599,6 @@
         "commands",
         "contents",
         "write.mjs"
-      ]
-    },
-    "list:sessions": {
-      "aliases": [],
-      "args": {},
-      "description": "List sessions and optionally filter by path or name",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "list:sessions",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "list",
-        "sessions.mjs"
-      ]
-    },
-    "open:kernel-channels": {
-      "aliases": [],
-      "args": {},
-      "description": "Open persistent kernel WS channels and optionally connect an RTC room",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "open:kernel-channels",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "open",
-        "kernel-channels.mjs"
-      ]
-    },
-    "execute:code": {
-      "aliases": [],
-      "args": {},
-      "description": "Send execute_request on an open channel and return parent_msg_id",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "execute:code",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "execute",
-        "code.mjs"
-      ]
-    },
-    "run:cell": {
-      "aliases": [],
-      "args": {},
-      "description": "Insert a cell, execute it, collect outputs, and update the cell in one step",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "run:cell",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "run",
-        "cell.mjs"
-      ]
-    },
-    "save:notebook": {
-      "aliases": [],
-      "args": {},
-      "description": "Save notebook (round-trip PUT, or no-op when using RTC)",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "save:notebook",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "save",
-        "notebook.mjs"
-      ]
-    },
-    "sessions:create": {
-      "aliases": [],
-      "args": {},
-      "description": "Create a Jupyter session (start a kernel) for a notebook",
-      "flags": {},
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "sessions:create",
-      "pluginAlias": "jupyter-link",
-      "pluginName": "jupyter-link",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": false,
-      "isESM": true,
-      "relativePath": [
-        "src",
-        "commands",
-        "sessions",
-        "create.mjs"
       ]
     },
     "config:get": {
@@ -340,7 +626,29 @@
       "aliases": [],
       "args": {},
       "description": "Save Jupyter connection settings to ~/.config/jupyter-link/config.json",
-      "flags": {},
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "token": {
+          "description": "Jupyter auth token",
+          "name": "token",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "port": {
+          "description": "Daemon IPC port",
+          "name": "port",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
       "hasDynamicHelp": false,
       "hiddenAliases": [],
       "id": "config:set",
@@ -356,7 +664,373 @@
         "config",
         "set.mjs"
       ]
+    },
+    "execute:code": {
+      "aliases": [],
+      "args": {},
+      "description": "Send execute_request on an open channel and return parent_msg_id",
+      "flags": {
+        "ref": {
+          "description": "Channel ref from open:kernel-channels",
+          "name": "ref",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "code": {
+          "description": "Code literal. Use '-' to read raw stdin.",
+          "name": "code",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "code-file": {
+          "description": "Path to a file whose contents are the code",
+          "name": "code-file",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "allow-stdin": {
+          "description": "Allow kernel to request stdin",
+          "name": "allow-stdin",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "stop-on-error": {
+          "description": "Stop kernel on first error",
+          "name": "stop-on-error",
+          "allowNo": true,
+          "type": "boolean"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "execute:code",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "execute",
+        "code.mjs"
+      ]
+    },
+    "list:sessions": {
+      "aliases": [],
+      "args": {},
+      "description": "List sessions and optionally filter by path or name",
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "notebook": {
+          "char": "n",
+          "description": "Notebook path (server-relative, POSIX-style)",
+          "name": "notebook",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "name": {
+          "description": "Filter by notebook file name",
+          "name": "name",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "list:sessions",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "list",
+        "sessions.mjs"
+      ]
+    },
+    "open:kernel-channels": {
+      "aliases": [],
+      "args": {},
+      "description": "Open persistent kernel WS channels and optionally connect an RTC room",
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "notebook": {
+          "char": "n",
+          "description": "Notebook path (server-relative, POSIX-style)",
+          "name": "notebook",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "kernel-id": {
+          "description": "Explicit kernel id (skips session lookup)",
+          "name": "kernel-id",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "kernel-name": {
+          "description": "Kernel spec name (e.g. python3)",
+          "name": "kernel-name",
+          "default": "python3",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "rtc": {
+          "description": "RTC mode",
+          "name": "rtc",
+          "default": "auto",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "options": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "open:kernel-channels",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "open",
+        "kernel-channels.mjs"
+      ]
+    },
+    "save:notebook": {
+      "aliases": [],
+      "args": {},
+      "description": "Save notebook (round-trip PUT, or no-op when using RTC)",
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "notebook": {
+          "char": "n",
+          "description": "Notebook path (server-relative, POSIX-style)",
+          "name": "notebook",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "room": {
+          "description": "RTC room_ref from open:kernel-channels",
+          "name": "room",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "save:notebook",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "save",
+        "notebook.mjs"
+      ]
+    },
+    "run:cell": {
+      "aliases": [],
+      "args": {},
+      "description": "Insert a cell, execute it, collect outputs, and update the cell in one step",
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "notebook": {
+          "char": "n",
+          "description": "Notebook path (server-relative, POSIX-style)",
+          "name": "notebook",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "ref": {
+          "description": "Channel ref from open:kernel-channels",
+          "name": "ref",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "room": {
+          "description": "RTC room_ref from open:kernel-channels",
+          "name": "room",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "code": {
+          "description": "Code literal. Use '-' to read raw stdin.",
+          "name": "code",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "code-file": {
+          "description": "Path to a file whose contents are the code",
+          "name": "code-file",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "index": {
+          "description": "Cell index (0-based)",
+          "name": "index",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "position": {
+          "description": "Insert position when index is omitted",
+          "name": "position",
+          "default": "end",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "options": [
+            "start",
+            "end"
+          ],
+          "type": "option"
+        },
+        "timeout": {
+          "description": "Timeout in seconds",
+          "name": "timeout",
+          "default": 60,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "stop-on-error": {
+          "description": "Stop kernel on first error",
+          "name": "stop-on-error",
+          "allowNo": true,
+          "type": "boolean"
+        },
+        "metadata": {
+          "description": "JSON string merged into cell agent metadata",
+          "name": "metadata",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "run:cell",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "run",
+        "cell.mjs"
+      ]
+    },
+    "sessions:create": {
+      "aliases": [],
+      "args": {},
+      "description": "Create a Jupyter session (start a kernel) for a notebook",
+      "flags": {
+        "url": {
+          "description": "Full Jupyter URL (may include ?token=… and /notebooks/<path>)",
+          "name": "url",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "notebook": {
+          "char": "n",
+          "description": "Notebook path (server-relative, POSIX-style)",
+          "name": "notebook",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "kernel-name": {
+          "description": "Kernel spec name (e.g. python3)",
+          "name": "kernel-name",
+          "default": "python3",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "type": {
+          "description": "Session type",
+          "name": "type",
+          "default": "notebook",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "sessions:create",
+      "pluginAlias": "jupyter-link",
+      "pluginName": "jupyter-link",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "src",
+        "commands",
+        "sessions",
+        "create.mjs"
+      ]
     }
   },
-  "version": "0.2.8"
+  "version": "0.3.0"
 }

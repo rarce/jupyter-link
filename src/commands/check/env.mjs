@@ -1,11 +1,17 @@
 import { Command } from '@oclif/core';
 import { getConfig, httpJson, ok, assertNodeVersion } from '../../lib/common.mjs';
+import { commonFlags, applyUrlFlag } from '../../lib/flags.mjs';
 import { detectRTC } from '../../lib/rtcDetect.mjs';
 
 export default class CheckEnv extends Command {
   static description = 'Verify connectivity and basic Jupyter Server compatibility';
+  static flags = {
+    url: commonFlags.url,
+  };
   async run() {
     assertNodeVersion();
+    const { flags } = await this.parse(CheckEnv);
+    applyUrlFlag(flags);
     const { baseUrl, token } = getConfig();
     const [sessions, contents, rtc] = await Promise.all([
       httpJson('GET', `${baseUrl}/api/sessions`, token).catch(e => ({ error: e.message })),
@@ -21,4 +27,3 @@ export default class CheckEnv extends Command {
     });
   }
 }
-

@@ -1,4 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { oclifConfig } from './_helpers.mjs';
 
 const C = {
   httpJson: vi.fn(), ok: vi.fn(),
@@ -17,14 +18,14 @@ describe('check:env', () => {
   test('reports all ok', async () => {
     C.httpJson.mockResolvedValue([]);
     R.detectRTC.mockResolvedValue({ available: true });
-    await new Check([], {}).run();
+    await new Check([], oclifConfig()).run();
     expect(C.ok).toHaveBeenCalledWith(expect.objectContaining({ ok: true, sessions_ok: true, contents_ok: true, rtc_available: true }));
   });
 
   test('reports errors', async () => {
     C.httpJson.mockImplementation((m, u) => u.includes('sessions') ? Promise.reject(new Error('sess-err')) : Promise.resolve([]));
     R.detectRTC.mockRejectedValue(new Error('rtc-err'));
-    await new Check([], {}).run();
+    await new Check([], oclifConfig()).run();
     expect(C.ok).toHaveBeenCalledWith(expect.objectContaining({ ok: false, sessions_ok: false, contents_ok: true, rtc_available: false }));
   });
 });

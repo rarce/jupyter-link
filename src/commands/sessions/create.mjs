@@ -1,26 +1,30 @@
-import { Command } from '@oclif/core';
-import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
+import { Command, Flags } from '@oclif/core';
+import { getConfig, httpJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
+import { commonFlags, applyUrlFlag } from '../../lib/flags.mjs';
 
 export default class SessionsCreate extends Command {
   static description = 'Create a Jupyter session (start a kernel) for a notebook';
+  static flags = {
+    url: commonFlags.url,
+    notebook: commonFlags.notebook,
+    'kernel-name': commonFlags['kernel-name'],
+    type: Flags.string({ description: 'Session type', default: 'notebook' }),
+  };
   async run() {
     assertNodeVersion();
-    const input = await readStdinJson();
-    const path = input.path ?? input.notebook;
-    if (!path) throw new Error('path is required');
+    const { flags } = await this.parse(SessionsCreate);
+    applyUrlFlag(flags);
+    const path = flags.notebook;
+    if (!path) throw new Error('--notebook is required');
     validateNotebookPath(path);
-    const kernelName = input.kernel_name ?? input.kernel ?? 'python3';
-    const type = input.type ?? 'notebook';
     const { baseUrl, token } = getConfig();
 
-    // Check if a session already exists for this notebook
     const sessions = await httpJson('GET', `${baseUrl}/api/sessions`, token);
     const existing = sessions.find(s => s.notebook && s.notebook.path === path);
     if (existing) return ok(existing);
 
-    // Create new session via Jupyter Sessions API
     const name = path.split('/').pop();
-    const body = { path, name, type, kernel: { name: kernelName } };
+    const body = { path, name, type: flags.type, kernel: { name: flags['kernel-name'] } };
     const session = await httpJson('POST', `${baseUrl}/api/sessions`, token, body);
     ok(session);
   }

@@ -1,37 +1,47 @@
 import { Command } from '@oclif/core';
-import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion, nowIso, validateNotebookPath } from '../../lib/common.mjs';
+import { getConfig, httpJson, ok, assertNodeVersion, nowIso, validateNotebookPath } from '../../lib/common.mjs';
+import { commonFlags, applyUrlFlag, readCode } from '../../lib/flags.mjs';
 import { ensureDaemon, request } from '../../lib/daemonClient.mjs';
 
 export default class RunCell extends Command {
   static description = 'Insert a cell, execute it, collect outputs, and update the cell in one step';
+  static flags = {
+    url: commonFlags.url,
+    notebook: commonFlags.notebook,
+    ref: commonFlags.ref,
+    room: commonFlags.room,
+    code: commonFlags.code,
+    'code-file': commonFlags['code-file'],
+    index: commonFlags.index,
+    position: commonFlags.position,
+    timeout: commonFlags.timeout,
+    'stop-on-error': commonFlags['stop-on-error'],
+    metadata: commonFlags.metadata,
+  };
   async run() {
     assertNodeVersion();
-    const input = await readStdinJson();
-    const path = input.path ?? input.notebook;
-    const channelRef = input.channel_ref ?? input.ref;
-    const code = input.code ?? input.source ?? '';
-    const timeoutS = input.timeout_s ?? 60;
-    const index = input.index;
-    const position = input.position || 'end';
-    const agentMeta = input.metadata || {};
-    const roomRef = input.room_ref;
+    const { flags } = await this.parse(RunCell);
+    applyUrlFlag(flags);
 
-    if (!path && !roomRef) throw new Error('path is required');
-    if (!channelRef) throw new Error('channel_ref is required (call open:kernel-channels first)');
-    if (!code) throw new Error('code is required');
+    const path = flags.notebook;
+    const channelRef = flags.ref;
+    const roomRef = flags.room;
+    const code = await readCode(flags);
+    const agentMeta = flags.metadata ? JSON.parse(flags.metadata) : {};
+
+    if (!path && !roomRef) throw new Error('--notebook is required');
+    if (!channelRef) throw new Error('--ref is required (call open:kernel-channels first)');
+    if (!code) throw new Error('--code, --code-file, or --code=- is required');
     if (path) validateNotebookPath(path);
 
     await ensureDaemon();
 
-    // --- Step 1: Insert cell ---
     let cellId;
     if (roomRef) {
-      // RTC path: insert via Y.Doc — lock the cell while we execute so collaborators
-      // see a read-only indicator and cannot race our edits.
       const insertOut = await request('rtc:insert-cell', {
         room_ref: roomRef,
-        index,
-        position,
+        index: flags.index,
+        position: flags.position,
         source: code,
         metadata: agentMeta,
         editable: false,
@@ -39,7 +49,6 @@ export default class RunCell extends Command {
       if (insertOut.error) throw new Error(insertOut.error);
       cellId = insertOut.cell_id;
     } else {
-      // REST path: GET + splice + PUT
       const { baseUrl, token } = getConfig();
       const nb = await httpJson('GET', `${baseUrl}/api/contents/${encodeURIComponent(path)}?content=1`, token);
       if (nb.type !== 'notebook') throw new Error('Path is not a notebook');
@@ -48,43 +57,31 @@ export default class RunCell extends Command {
       const meta = { role: 'jupyter-driver', created_at: nowIso(), auto_save: false, ...agentMeta };
       const cell = { cell_type: 'code', metadata: { agent: meta }, source: code, outputs: [], execution_count: null };
       let insertAt;
-      if (typeof index === 'number') insertAt = Math.max(0, Math.min(index, cells.length));
-      else insertAt = position === 'start' ? 0 : cells.length;
+      if (typeof flags.index === 'number') insertAt = Math.max(0, Math.min(flags.index, cells.length));
+      else insertAt = flags.position === 'start' ? 0 : cells.length;
       cells.splice(insertAt, 0, cell);
       await httpJson('PUT', `${baseUrl}/api/contents/${encodeURIComponent(path)}`, token, { type: 'notebook', format: 'json', content: nbj });
       cellId = insertAt;
     }
 
-    // --- Step 2: Execute code on kernel channel ---
-    const execOut = await request('exec', { channel_ref: channelRef, code, allow_stdin: false, stop_on_error: input.stop_on_error !== false });
+    const execOut = await request('exec', { channel_ref: channelRef, code, allow_stdin: false, stop_on_error: flags['stop-on-error'] });
     if (execOut.error) throw new Error(execOut.error);
     const parentMsgId = execOut.parent_msg_id;
 
-    // --- Step 3: Collect outputs (with live streaming if RTC) ---
-    const collectArgs = { channel_ref: channelRef, parent_msg_id: parentMsgId, timeout_s: timeoutS };
-    if (roomRef) {
-      collectArgs.room_ref = roomRef;
-      collectArgs.cell_id = cellId;
-    }
+    const collectArgs = { channel_ref: channelRef, parent_msg_id: parentMsgId, timeout_s: flags.timeout };
+    if (roomRef) { collectArgs.room_ref = roomRef; collectArgs.cell_id = cellId; }
     const collectOut = await request('collect', collectArgs);
     if (collectOut.error) throw new Error(collectOut.error);
     const outputs = collectOut.outputs || [];
     const executionCount = collectOut.execution_count;
     const status = collectOut.status || 'unknown';
 
-    // --- Step 4: Update cell with outputs ---
     if (roomRef) {
-      // RTC path: update via Y.Doc, unlocking the cell now that execution finished.
       const updateOut = await request('rtc:update-cell', {
-        room_ref: roomRef,
-        cell_id: cellId,
-        outputs,
-        execution_count: executionCount,
-        editable: true,
+        room_ref: roomRef, cell_id: cellId, outputs, execution_count: executionCount, editable: true,
       });
       if (updateOut.error) throw new Error(updateOut.error);
     } else {
-      // REST path: re-read + update + PUT
       const { baseUrl, token } = getConfig();
       const nb2 = await httpJson('GET', `${baseUrl}/api/contents/${encodeURIComponent(path)}?content=1`, token);
       const nbj2 = nb2.content;

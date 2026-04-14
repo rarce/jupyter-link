@@ -1,5 +1,6 @@
-import { Command } from '@oclif/core';
-import { getConfig, httpJson, readStdinJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
+import { Command, Flags } from '@oclif/core';
+import { getConfig, httpJson, ok, assertNodeVersion, validateNotebookPath } from '../../lib/common.mjs';
+import { commonFlags, applyUrlFlag } from '../../lib/flags.mjs';
 import { ensureDaemon, request } from '../../lib/daemonClient.mjs';
 
 export function summarizeOutput(out, maxChars) {
@@ -12,7 +13,6 @@ export function summarizeOutput(out, maxChars) {
     const data = {};
     for (const [mime, val] of Object.entries(out.data || {})) {
       const text = Array.isArray(val) ? val.join('') : (val || '');
-      // Skip large binary mimes, keep text representations
       if (mime.startsWith('image/') || mime.startsWith('application/pdf')) {
         data[mime] = `<${text.length} chars>`;
       } else {
@@ -23,7 +23,6 @@ export function summarizeOutput(out, maxChars) {
   }
   if (type === 'error') {
     const tb = out.traceback || [];
-    // Keep last 5 frames max, truncate each
     const trimmed = tb.slice(-5).map(line => line.slice(0, maxChars));
     return { output_type: type, ename: out.ename, evalue: out.evalue, traceback: trimmed };
   }
@@ -32,39 +31,50 @@ export function summarizeOutput(out, maxChars) {
 
 export function summarizeCell(cell, index, maxChars) {
   const source = Array.isArray(cell.source) ? cell.source.join('') : (cell.source || '');
-  const result = {
-    index,
-    cell_type: cell.cell_type,
-    source: source.slice(0, maxChars),
-  };
+  const result = { index, cell_type: cell.cell_type, source: source.slice(0, maxChars) };
   if (cell.cell_type === 'code') {
     result.execution_count = cell.execution_count ?? null;
     result.outputs = (cell.outputs || []).map(o => summarizeOutput(o, maxChars));
   }
-  if (cell.metadata?.agent) {
-    result.agent = cell.metadata.agent;
-  }
+  if (cell.metadata?.agent) result.agent = cell.metadata.agent;
   return result;
+}
+
+function parseIntList(s) {
+  return s.split(',').map(x => parseInt(x.trim(), 10)).filter(n => Number.isInteger(n));
 }
 
 export default class ReadCell extends Command {
   static description = 'Read specific cells from a notebook with their outputs, source, and metadata';
+  static flags = {
+    url: commonFlags.url,
+    notebook: commonFlags.notebook,
+    room: commonFlags.room,
+    cells: Flags.string({ description: 'Comma-separated cell indices (e.g. "0,4,8")' }),
+    'cell-id': Flags.integer({ description: 'Single cell index' }),
+    range: Flags.string({ description: 'Range "start:end" (end-exclusive)' }),
+    'max-chars': commonFlags['max-chars'],
+  };
   async run() {
     assertNodeVersion();
-    const input = await readStdinJson();
-    const path = input.path ?? input.notebook;
-    const roomRef = input.room_ref;
-    if (!path && !roomRef) throw new Error('path is required');
-    const maxChars = input.max_chars ?? 3000;
+    const { flags } = await this.parse(ReadCell);
+    applyUrlFlag(flags);
 
-    // RTC path: read from Y.Doc via daemon
+    const path = flags.notebook;
+    const roomRef = flags.room;
+    if (!path && !roomRef) throw new Error('--notebook is required');
+    const maxChars = flags['max-chars'];
+
+    const cellsList = flags.cells ? parseIntList(flags.cells) : undefined;
+    const range = flags.range ? flags.range.split(':').map(n => parseInt(n, 10)) : undefined;
+
     if (roomRef) {
       await ensureDaemon();
       const out = await request('rtc:read-notebook', {
         room_ref: roomRef,
-        cells: input.cells,
-        cell_id: input.cell_id,
-        range: input.range,
+        cells: cellsList,
+        cell_id: flags['cell-id'],
+        range,
         max_chars: maxChars,
       });
       if (out.error) throw new Error(out.error);
@@ -72,28 +82,20 @@ export default class ReadCell extends Command {
       return;
     }
 
-    // REST path (original)
     validateNotebookPath(path);
     const { baseUrl, token } = getConfig();
     const nb = await httpJson('GET', `${baseUrl}/api/contents/${encodeURIComponent(path)}?content=1`, token);
     if (nb.type !== 'notebook') throw new Error('Path is not a notebook');
     const cells = nb.content.cells || [];
 
-    // Determine which cells to return
     let indices;
-    if (input.cells !== undefined) {
-      // Explicit list of indices: {"cells": [0, 4, 8]}
-      indices = Array.isArray(input.cells) ? input.cells : [input.cells];
-    } else if (input.cell_id !== undefined) {
-      // Single cell: {"cell_id": 4}
-      indices = [input.cell_id];
-    } else if (input.range !== undefined) {
-      // Range: {"range": [4, 10]} → cells 4..9
-      const [start, end] = input.range;
+    if (cellsList !== undefined) indices = cellsList;
+    else if (flags['cell-id'] !== undefined) indices = [flags['cell-id']];
+    else if (range !== undefined) {
+      const [start, end] = range;
       indices = [];
       for (let i = start; i < Math.min(end, cells.length); i++) indices.push(i);
     } else {
-      // No filter: return summary of all cells (source truncated, no outputs)
       const summary = cells.map((c, i) => {
         const src = Array.isArray(c.source) ? c.source.join('') : (c.source || '');
         return {
@@ -108,14 +110,10 @@ export default class ReadCell extends Command {
       return;
     }
 
-    // Validate and return requested cells
     const result = [];
     for (const i of indices) {
-      if (i < 0 || i >= cells.length) {
-        result.push({ index: i, error: `out of range (0..${cells.length - 1})` });
-      } else {
-        result.push(summarizeCell(cells[i], i, maxChars));
-      }
+      if (i < 0 || i >= cells.length) result.push({ index: i, error: `out of range (0..${cells.length - 1})` });
+      else result.push(summarizeCell(cells[i], i, maxChars));
     }
     ok({ total_cells: cells.length, cells: result });
   }
