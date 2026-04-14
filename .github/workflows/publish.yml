@@ -30,7 +30,7 @@ jobs:
             exit 1
           fi
 
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
       - run: npm test
       - run: npm run build
 
