@@ -128,3 +128,7 @@ export function fail(err) {
 export function nowIso() { return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'); }
 export function newSessionId() { return crypto.randomUUID().replace(/-/g, ''); }
 
+// Flag helpers (commonFlags, readCode, parseJupyterUrl, channel cache, …)
+// live in ./flags.mjs to avoid dragging oclif/Flags through every common.mjs
+// consumer and to keep test mocks of common.mjs small.
+

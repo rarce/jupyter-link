@@ -1,20 +1,27 @@
 import { Command } from '@oclif/core';
-import { readStdinJson, ok, assertNodeVersion } from '../../lib/common.mjs';
+import { ok, assertNodeVersion } from '../../lib/common.mjs';
+import { commonFlags } from '../../lib/flags.mjs';
 import { ensureDaemon, request } from '../../lib/daemonClient.mjs';
 
 export default class CollectOutputs extends Command {
   static description = 'Wait for outputs/reply/idle for a parent_msg_id on a channel';
+  static flags = {
+    ref: commonFlags.ref,
+    'parent-id': commonFlags['parent-id'],
+    timeout: commonFlags.timeout,
+  };
   async run() {
     assertNodeVersion();
-    const input = await readStdinJson();
-    const ref = input.channel_ref ?? input.ref;
-    const parent = input.parent_msg_id ?? input.parent_id;
-    if (!ref) throw new Error('channel_ref is required');
-    if (!parent) throw new Error('parent_msg_id is required');
+    const { flags } = await this.parse(CollectOutputs);
+    if (!flags.ref) throw new Error('--ref is required');
+    if (!flags['parent-id']) throw new Error('--parent-id is required');
     await ensureDaemon();
-    const out = await request('collect', { channel_ref: ref, parent_msg_id: parent, timeout_s: input.timeout_s || 60 });
+    const out = await request('collect', {
+      channel_ref: flags.ref,
+      parent_msg_id: flags['parent-id'],
+      timeout_s: flags.timeout,
+    });
     if (out.error) throw new Error(out.error);
     ok(out);
   }
 }
-

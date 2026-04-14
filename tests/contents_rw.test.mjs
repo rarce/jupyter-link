@@ -1,10 +1,11 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { oclifConfig } from './_helpers.mjs';
 
 const C = {
-  readStdinJson: vi.fn(), httpJson: vi.fn(), ok: vi.fn(),
+  httpJson: vi.fn(), ok: vi.fn(),
   getConfig: vi.fn(() => ({ baseUrl: 'http://h', token: 't' })),
   assertNodeVersion: vi.fn(),
-  validateNotebookPath: vi.fn((p) => p), validateKernelId: vi.fn((id) => id), assertHttpUrl: vi.fn((u) => new URL(u)), encodeNotebookPath: vi.fn((p) => encodeURIComponent(p)),
+  validateNotebookPath: vi.fn((p) => p),
 };
 vi.mock('../src/lib/common.mjs', () => C);
 
@@ -14,42 +15,36 @@ const { default: Write } = await import('../src/commands/contents/write.mjs');
 describe('contents:read', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  test('throws without path', async () => {
-    C.readStdinJson.mockResolvedValue({});
-    await expect(new Read([], {}).run()).rejects.toThrow('path is required');
+  test('throws without --notebook', async () => {
+    await expect(new Read([], oclifConfig()).run()).rejects.toThrow('--notebook');
   });
 
   test('returns notebook content', async () => {
-    C.readStdinJson.mockResolvedValue({ path: 'n.ipynb' });
     C.httpJson.mockResolvedValue({ type: 'notebook', content: { cells: [] } });
-    await new Read([], {}).run();
+    await new Read(['--notebook', 'n.ipynb'], oclifConfig()).run();
     expect(C.ok).toHaveBeenCalledWith({ cells: [] });
   });
 
   test('rejects non-notebook', async () => {
-    C.readStdinJson.mockResolvedValue({ path: 'x.txt' });
     C.httpJson.mockResolvedValue({ type: 'file' });
-    await expect(new Read([], {}).run()).rejects.toThrow('not a notebook');
+    await expect(new Read(['--notebook', 'x.txt'], oclifConfig()).run()).rejects.toThrow('not a notebook');
   });
 });
 
 describe('contents:write', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  test('throws without path', async () => {
-    C.readStdinJson.mockResolvedValue({ nb_json: {} });
-    await expect(new Write([], {}).run()).rejects.toThrow('path is required');
+  test('throws without --notebook', async () => {
+    await expect(new Write(['--content', '{}'], oclifConfig()).run()).rejects.toThrow('--notebook');
   });
 
-  test('throws without nb_json', async () => {
-    C.readStdinJson.mockResolvedValue({ path: 'n.ipynb' });
-    await expect(new Write([], {}).run()).rejects.toThrow('nb_json is required');
+  test('throws without content', async () => {
+    await expect(new Write(['--notebook', 'n.ipynb'], oclifConfig()).run()).rejects.toThrow(/content/);
   });
 
-  test('PUTs notebook content', async () => {
-    C.readStdinJson.mockResolvedValue({ path: 'n.ipynb', nb_json: { cells: [] } });
+  test('PUTs notebook content via --content', async () => {
     C.httpJson.mockResolvedValue({});
-    await new Write([], {}).run();
+    await new Write(['--notebook', 'n.ipynb', '--content', JSON.stringify({ cells: [] })], oclifConfig()).run();
     expect(C.httpJson).toHaveBeenCalledWith('PUT', expect.stringContaining('/api/contents/'), 't', expect.objectContaining({ type: 'notebook' }));
     expect(C.ok).toHaveBeenCalledWith({ ok: true });
   });

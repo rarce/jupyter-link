@@ -1,15 +1,26 @@
-import { Command } from '@oclif/core';
-import { readStdinJson, ok, saveConfigFile, configPath } from '../../lib/common.mjs';
+import { Command, Flags } from '@oclif/core';
+import { ok, saveConfigFile, configPath } from '../../lib/common.mjs';
+import { commonFlags, parseJupyterUrl } from '../../lib/flags.mjs';
 
 export default class ConfigSet extends Command {
   static description = 'Save Jupyter connection settings to ~/.config/jupyter-link/config.json';
+  static flags = {
+    url: commonFlags.url,
+    token: Flags.string({ description: 'Jupyter auth token' }),
+    port: Flags.integer({ description: 'Daemon IPC port' }),
+  };
   async run() {
-    const input = await readStdinJson();
+    const { flags } = await this.parse(ConfigSet);
     const data = {};
-    if (input.url !== undefined) data.url = input.url;
-    if (input.token !== undefined) data.token = input.token;
-    if (input.port !== undefined) data.port = input.port;
-    if (Object.keys(data).length === 0) throw new Error('Provide at least one of: url, token, port');
+    if (flags.url !== undefined) {
+      // When URL carries ?token=…, store both.
+      const p = parseJupyterUrl(flags.url);
+      data.url = p.baseUrl;
+      if (p.token && flags.token === undefined) data.token = p.token;
+    }
+    if (flags.token !== undefined) data.token = flags.token;
+    if (flags.port !== undefined) data.port = flags.port;
+    if (Object.keys(data).length === 0) throw new Error('Provide at least one of: --url, --token, --port');
     const merged = saveConfigFile(data);
     ok({ ok: true, path: configPath(), config: merged });
   }

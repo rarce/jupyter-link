@@ -16,7 +16,10 @@ The result: **the agent codes, Jupyter renders, you supervise.** You can jump in
 npx skills add rarce/jupyter-link
 ```
 
-Once installed, the agent uses `npx jupyter-link@0.1.0` to run commands. No global install required.
+Once installed, the agent uses `npx -y jupyter-link@latest` (or a globally installed `jupyter-link`) to run commands. No global install required.
+
+> **0.3.0 is a breaking change**: commands now take command-line flags instead of stdin JSON.
+> See the *Migration* section in [SKILL.md](./SKILL.md) for the field → flag mapping.
 
 ## What it does
 
@@ -45,7 +48,7 @@ When the Jupyter server has the [`jupyter-collaboration`](https://github.com/jup
    ```
 2. Pass `"rtc": true` (or `"rtc": "auto"`) when opening kernel channels:
    ```bash
-   echo '{"path":"notebook.ipynb","rtc":true}' | npx jupyter-link@0.2.7 open:kernel-channels
+   jupyter-link open:kernel-channels --notebook notebook.ipynb --rtc on
    ```
    This returns a `room_ref` alongside the usual `channel_ref`.
 3. Pass `room_ref` to subsequent commands (`run:cell`, `cell:insert`, `cell:update`, `cell:read`, `close:channels`) to use the RTC path.
@@ -75,23 +78,28 @@ The agent will use the skill to configure the connection, open a kernel channel,
 
 ## Commands
 
-All commands read JSON from stdin and write JSON to stdout.
+All commands take command-line flags and write JSON to stdout. Run `jupyter-link <cmd> --help`
+for the full flag list of any command.
 
 | Command | Description |
 |---------|-------------|
-| `config:set` | Save connection settings (url, token, port) |
+| `exec` | One-shot: insert+execute+collect+update, auto-opens and caches channels |
+| `config:set` | Save connection settings (--url, --token, --port) |
 | `config:get` | Show effective config with source per field |
 | `check:env` | Verify Jupyter Server connectivity |
-| `list:sessions` | List sessions, filter by path or name |
+| `list:sessions` | List sessions, filter by --notebook or --name |
+| `sessions:create` | Create a session (start a kernel) for --notebook |
 | `cell:read` | Read specific cells with outputs (preferred) |
 | `cell:insert` | Insert a code cell with agent metadata |
 | `cell:update` | Update cell source, outputs, execution_count |
+| `contents:create` | Create empty notebook boilerplate (nbformat v4) |
 | `contents:read` | Read full notebook JSON |
-| `contents:write` | Write notebook JSON |
+| `contents:write` | Write notebook JSON from --content-file |
 | `open:kernel-channels` | Open persistent WebSocket to kernel |
 | `execute:code` | Send execute_request, get parent_msg_id |
 | `collect:outputs` | Wait for outputs/reply/idle |
-| `close:channels` | Close a channel |
+| `run:cell` | Insert + execute + collect + update using existing --ref |
+| `close:channels` | Close a channel (and/or RTC room) |
 | `save:notebook` | Save notebook (round-trip PUT) |
 
 ## Configuration
@@ -110,7 +118,8 @@ You can also install and use it directly without the skills framework:
 
 ```bash
 npm install -g jupyter-link
-echo '{}' | jupyter-link check:env
+jupyter-link check:env
+jupyter-link exec --url 'http://host:8888/notebooks/foo.ipynb?token=XYZ' --code 'print(1+1)'
 ```
 
 ## License
